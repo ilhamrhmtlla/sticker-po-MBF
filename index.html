@@ -10,8 +10,6 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- JsBarcode -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-    <!-- QRCode.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -74,7 +72,7 @@
             flex-direction: column;
             justify-content: space-between;
             align-items: center;
-            padding: 2mm;
+            padding: 1mm 1mm;
             overflow: hidden;
             position: relative;
             background: white;
@@ -101,7 +99,7 @@
             </div>
             <div>
                 <h1 class="font-bold text-lg leading-tight">Cetak Stiker Label PO</h1>
-                <p class="text-xs text-slate-400">Generator Label GL-A44 + Auto Match Master SKU</p>
+                <p class="text-xs text-slate-400">Generator Label 84 Stiker (6 Kolom x 14 Baris) + Auto Match SKU</p>
             </div>
         </div>
 
@@ -158,8 +156,10 @@
                 <div id="tab-kertas" class="tab-content space-y-4">
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
                         <label class="block font-bold text-slate-700 mb-1">Preset Label</label>
-                        <select id="presetSelect" onchange="applyPreset()" class="w-full border border-slate-300 rounded p-2 bg-white text-xs">
-                            <option value="gla44">GL-A44 (44 Stiker - 4x11)</option>
+                        <select id="presetSelect" onchange="applyPreset()" class="w-full border border-slate-300 rounded p-2 bg-white text-xs font-bold text-blue-900">
+                            <option value="gla84_6x14" selected>Layout 84 Stiker (6 Kolom x 14 Baris)</option>
+                            <option value="gla84">Layout 84 Stiker (4 Kolom x 21 Baris)</option>
+                            <option value="gla44">Blueprint GL-A44 (44 Stiker - 4x11)</option>
                             <option value="tomjerry103">Tom & Jerry No. 103 (12 Stiker)</option>
                             <option value="custom">Kustom Layout</option>
                         </select>
@@ -168,11 +168,11 @@
                     <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
                         <div>
                             <label class="block text-slate-600 font-medium mb-1">Jumlah Kolom</label>
-                            <input type="number" id="gridCols" value="4" onchange="renderAllPages()" class="w-full border border-slate-300 rounded p-1.5">
+                            <input type="number" id="gridCols" value="6" onchange="renderAllPages()" class="w-full border border-slate-300 rounded p-1.5 font-bold">
                         </div>
                         <div>
                             <label class="block text-slate-600 font-medium mb-1">Jumlah Baris</label>
-                            <input type="number" id="gridRows" value="11" onchange="renderAllPages()" class="w-full border border-slate-300 rounded p-1.5">
+                            <input type="number" id="gridRows" value="14" onchange="renderAllPages()" class="w-full border border-slate-300 rounded p-1.5 font-bold">
                         </div>
                     </div>
 
@@ -181,19 +181,19 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <span class="text-slate-500">Margin Atas</span>
-                                <input type="number" id="marginTop" value="9" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginTop" value="6" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Margin Bawah</span>
-                                <input type="number" id="marginBottom" value="9" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginBottom" value="6" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Margin Kiri</span>
-                                <input type="number" id="marginLeft" value="7" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginLeft" value="4" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Margin Kanan</span>
-                                <input type="number" id="marginRight" value="7" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginRight" value="4" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                         </div>
                     </div>
@@ -203,11 +203,11 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <span class="text-slate-500">Gap Horisontal</span>
-                                <input type="number" id="gapX" value="2" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="gapX" value="1" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Gap Vertikal</span>
-                                <input type="number" id="gapY" value="0" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="gapY" value="0.5" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                         </div>
                     </div>
@@ -263,15 +263,14 @@
                                 <select id="codeType" onchange="renderAllPages()" class="w-full border p-1.5 rounded">
                                     <option value="CODE128">Barcode 128 (Standard)</option>
                                     <option value="EAN13">EAN-13</option>
-                                    <option value="QR">QR Code</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-slate-600 mb-1">Ukuran Font Teks</label>
                                 <select id="fontSizeSelect" onchange="renderAllPages()" class="w-full border p-1.5 rounded">
-                                    <option value="8px">Sangat Kecil (8px)</option>
-                                    <option value="10px" selected>Normal (10px)</option>
-                                    <option value="12px">Besar (12px)</option>
+                                    <option value="7px">Sangat Kecil (7px)</option>
+                                    <option value="8px" selected>Presisi Layout 6x14 (8px)</option>
+                                    <option value="10px">Normal (10px)</option>
                                 </select>
                             </div>
                         </div>
@@ -279,7 +278,7 @@
                         <div class="space-y-2 pt-2">
                             <label class="flex items-center space-x-2">
                                 <input type="checkbox" id="enableCode" checked onchange="renderAllPages()" class="rounded text-blue-600">
-                                <span class="text-slate-700 font-medium">Tampilkan Gambar Barcode / QR</span>
+                                <span class="text-slate-700 font-medium">Tampilkan Gambar Barcode</span>
                             </label>
                             <label class="flex items-center space-x-2">
                                 <input type="checkbox" id="showPrice" checked onchange="renderAllPages()" class="rounded text-blue-600">
@@ -382,7 +381,7 @@
             <div class="no-print mb-4 flex items-center justify-between w-[210mm]">
                 <div class="flex items-center space-x-2 text-slate-700 font-bold text-sm">
                     <i class="fa-solid fa-eye text-blue-600"></i>
-                    <span>Pratinjau Kertas A4</span>
+                    <span>Pratinjau Kertas A4 (6 Kolom x 14 Baris = 84 Stiker)</span>
                     <span id="pageIndicator" class="text-xs bg-slate-200 px-2 py-0.5 rounded text-slate-600 font-normal">Halaman 1 dari 1</span>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -396,7 +395,7 @@
                 </div>
             </div>
 
-            <!-- CONTAINER CONTAINER UNTUK HALAMAN A4 -->
+            <!-- CONTAINER UNTUK HALAMAN A4 -->
             <div id="pagesRenderArea" class="flex flex-col items-center space-y-8">
                 <!-- Pages render here -->
             </div>
@@ -441,7 +440,31 @@
         // PRESET KERTAS
         function applyPreset() {
             const preset = document.getElementById('presetSelect').value;
-            if (preset === 'gla44') {
+            if (preset === 'gla84_6x14') {
+                document.getElementById('gridCols').value = 6;
+                document.getElementById('gridRows').value = 14;
+                document.getElementById('marginTop').value = 6;
+                document.getElementById('marginBottom').value = 6;
+                document.getElementById('marginLeft').value = 4;
+                document.getElementById('marginRight').value = 4;
+                document.getElementById('gapX').value = 1;
+                document.getElementById('gapY').value = 0.5;
+                if (document.getElementById('fontSizeSelect')) {
+                    document.getElementById('fontSizeSelect').value = '8px';
+                }
+            } else if (preset === 'gla84') {
+                document.getElementById('gridCols').value = 4;
+                document.getElementById('gridRows').value = 21;
+                document.getElementById('marginTop').value = 5;
+                document.getElementById('marginBottom').value = 5;
+                document.getElementById('marginLeft').value = 5;
+                document.getElementById('marginRight').value = 5;
+                document.getElementById('gapX').value = 1;
+                document.getElementById('gapY').value = 0.5;
+                if (document.getElementById('fontSizeSelect')) {
+                    document.getElementById('fontSizeSelect').value = '8px';
+                }
+            } else if (preset === 'gla44') {
                 document.getElementById('gridCols').value = 4;
                 document.getElementById('gridRows').value = 11;
                 document.getElementById('marginTop').value = 9;
@@ -450,6 +473,9 @@
                 document.getElementById('marginRight').value = 7;
                 document.getElementById('gapX').value = 2;
                 document.getElementById('gapY').value = 0;
+                if (document.getElementById('fontSizeSelect')) {
+                    document.getElementById('fontSizeSelect').value = '9px';
+                }
             } else if (preset === 'tomjerry103') {
                 document.getElementById('gridCols').value = 3;
                 document.getElementById('gridRows').value = 4;
@@ -459,6 +485,9 @@
                 document.getElementById('marginRight').value = 9;
                 document.getElementById('gapX').value = 5;
                 document.getElementById('gapY').value = 5;
+                if (document.getElementById('fontSizeSelect')) {
+                    document.getElementById('fontSizeSelect').value = '10px';
+                }
             }
             renderAllPages();
         }
@@ -506,7 +535,6 @@
 
                 masterSKUData = json.map(row => {
                     const keys = Object.keys(row);
-                    // Smart field mapping
                     let barcode = row['Barcode'] || row['UPC/Barcode'] || row['UPC'] || row['Kode'] || row['SKU'] || row[keys[0]] || '';
                     let nama = row['Nama Barang'] || row['Nama'] || row['Deskripsi'] || row[keys[1]] || '';
                     let harga = row['Harga'] || row['Harga Jual'] || row['Price'] || '';
@@ -587,27 +615,23 @@
             switchTab('data-po');
         }
 
-        // VLOOKUP AUTOMATION (MATCH PO TO MASTER DATA)
+        // VLOOKUP AUTOMATION
         function applyVLookupToPO() {
             if (poData.length === 0) return;
 
-            let matchCount = 0;
             poData = poData.map(po => {
                 let matched = null;
 
-                // 1. Match by Kode / Barcode if exists
                 if (po.kode && masterSKUData.length > 0) {
                     matched = masterSKUData.find(m => m.barcode === po.kode);
                 }
 
-                // 2. Smart Match by Clean Nama Barang
                 if (!matched && po.nama && masterSKUData.length > 0) {
                     const cleanPOName = cleanText(po.nama);
                     matched = masterSKUData.find(m => cleanText(m.nama) === cleanPOName);
                 }
 
                 if (matched) {
-                    matchCount++;
                     return {
                         ...po,
                         kode: po.kode || matched.barcode,
@@ -733,8 +757,8 @@
 
             const stickers = getFilteredStickers();
 
-            const cols = parseInt(document.getElementById('gridCols').value) || 4;
-            const rows = parseInt(document.getElementById('gridRows').value) || 11;
+            const cols = parseInt(document.getElementById('gridCols').value) || 6;
+            const rows = parseInt(document.getElementById('gridRows').value) || 14;
             const itemsPerPage = cols * rows;
 
             const totalPages = Math.max(1, Math.ceil(stickers.length / itemsPerPage));
@@ -751,9 +775,8 @@
             const headerText = document.getElementById('headerText')?.value || '';
             const enableCode = document.getElementById('enableCode')?.checked;
             const showPrice = document.getElementById('showPrice')?.checked;
-            const fontSize = document.getElementById('fontSizeSelect')?.value || '10px';
+            const fontSize = document.getElementById('fontSizeSelect')?.value || '8px';
 
-            // Only render active page for performance
             const pageIndex = currentPage - 1;
             const pageStickers = stickers.slice(pageIndex * itemsPerPage, (pageIndex + 1) * itemsPerPage);
 
@@ -767,6 +790,9 @@
             gridEl.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
             gridEl.style.gap = `${gy} ${gx}`;
 
+            const isDense = rows > 12;
+            const barcodeHeight = isDense ? 16 : 22;
+
             for (let i = 0; i < itemsPerPage; i++) {
                 const item = pageStickers[i];
                 const itemEl = document.createElement('div');
@@ -774,9 +800,9 @@
 
                 if (item) {
                     let html = `<div style="font-size: ${fontSize};" class="w-full text-center leading-tight">`;
-                    if (headerText) html += `<div class="font-bold uppercase text-[8px] text-slate-500">${headerText}</div>`;
-                    html += `<div class="font-bold line-clamp-2 uppercase">${item.nama}</div>`;
-                    if (item.variasi) html += `<div class="text-[8px] text-slate-600">${item.variasi}</div>`;
+                    if (headerText) html += `<div class="font-bold uppercase text-[7px] text-slate-500">${headerText}</div>`;
+                    html += `<div class="font-bold truncate uppercase" title="${item.nama}">${item.nama}</div>`;
+                    if (item.variasi) html += `<div class="text-[7px] text-slate-600">${item.variasi}</div>`;
                     html += `</div>`;
 
                     if (enableCode && item.kode) {
@@ -786,25 +812,25 @@
                             try {
                                 JsBarcode(`#${codeId}`, item.kode, {
                                     format: "CODE128",
-                                    height: 25,
-                                    width: 1.2,
+                                    height: barcodeHeight,
+                                    width: 1.0,
                                     displayValue: true,
-                                    fontSize: 9,
+                                    fontSize: 8,
                                     margin: 0
                                 });
                             } catch(e) {}
                         }, 10);
                     } else {
-                        html += `<div class="font-mono text-xs font-bold tracking-widest my-1">${item.kode || ''}</div>`;
+                        html += `<div class="font-mono text-[8px] font-bold tracking-tight my-0.5">${item.kode || ''}</div>`;
                     }
 
                     if (showPrice && item.harga) {
-                        html += `<div class="font-bold text-[9px] border-t w-full text-center pt-0.5">Rp ${Number(item.harga).toLocaleString('id-ID')}</div>`;
+                        html += `<div class="font-bold text-[7px] border-t w-full text-center pt-0.5">Rp ${Number(item.harga).toLocaleString('id-ID')}</div>`;
                     }
 
                     itemEl.innerHTML = html;
                 } else {
-                    itemEl.innerHTML = `<span class="text-[9px] text-slate-200 no-print select-none">KOSONG</span>`;
+                    itemEl.innerHTML = `<span class="text-[8px] text-slate-200 no-print select-none">KOSONG</span>`;
                 }
                 gridEl.appendChild(itemEl);
             }
@@ -815,8 +841,8 @@
 
         function changePage(delta) {
             const stickers = getFilteredStickers();
-            const cols = parseInt(document.getElementById('gridCols').value) || 4;
-            const rows = parseInt(document.getElementById('gridRows').value) || 11;
+            const cols = parseInt(document.getElementById('gridCols').value) || 6;
+            const rows = parseInt(document.getElementById('gridRows').value) || 14;
             const itemsPerPage = cols * rows;
             const totalPages = Math.max(1, Math.ceil(stickers.length / itemsPerPage));
 
