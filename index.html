@@ -54,9 +54,9 @@
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: center;   /* ← SEMUA KONTEN DI TENGAH STIKER */
             align-items: center;
-            padding: 0.8mm 1mm;
+            padding: 0.5mm 1mm;
             overflow: hidden;
             position: relative;
             background: white;
@@ -129,7 +129,7 @@
             </div>
             <div>
                 <h1 class="font-bold text-lg leading-tight">Cetak Stiker Label PO</h1>
-                <p class="text-xs text-slate-400">GL-A44 (6×14) + Import Template Resmi .docx + Auto Match SKU</p>
+                <p class="text-xs text-slate-400">GL-A44 (6×14 · 32×18mm) + Import Template Resmi .docx + Auto Match SKU</p>
             </div>
         </div>
 
@@ -147,6 +147,9 @@
                 <i class="fa-solid fa-file-import"></i> Upload Excel PO
                 <input type="file" id="fileExcelPO" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUploadPO(event)">
             </label>
+            <button onclick="printAlignmentTest()" class="bg-teal-600 hover:bg-teal-500 text-xs px-3 py-2 rounded-md transition flex items-center gap-1.5">
+                <i class="fa-solid fa-crosshairs"></i> Uji Posisi
+            </button>
             <button onclick="printCalibration()" class="bg-slate-600 hover:bg-slate-500 text-xs px-3 py-2 rounded-md transition flex items-center gap-1.5">
                 <i class="fa-solid fa-ruler"></i> Kalibrasi
             </button>
@@ -191,17 +194,17 @@
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
                         <label class="block font-bold text-slate-700 mb-1">Preset Label</label>
                         <select id="presetSelect" onchange="applyPreset()" class="w-full border border-slate-300 rounded p-2 bg-white text-xs font-bold text-blue-900">
-                            <option value="gla84_6x14" selected>Blueprint GL-A44 Resmi (6 Kolom × 14 Baris = 84)</option>
+                            <option value="gla84_6x14" selected>⭐ GL-A44 Ukur Fisik (6×14, 32×18mm) — Direkomendasikan</option>
                             <option value="gla84">Layout 84 Stiker (4 Kolom × 21 Baris)</option>
                             <option value="gla44">Layout 44 Stiker (4 Kolom × 11 Baris)</option>
                             <option value="tomjerry103">Tom & Jerry No. 103 (12 Stiker)</option>
                             <option value="custom">Kustom Layout</option>
                         </select>
                         <p class="text-[10px] text-slate-500 leading-tight">
-                            💡 Preset = estimasi. Untuk presisi maksimal, gunakan tombol di bawah untuk membaca template resmi (.docx) langsung dari website Blueprint.
+                            💡 Preset ⭐ = hasil pengukuran lembar fisik Anda. Untuk tipe label lain, gunakan tombol di bawah untuk membaca template resmi (.docx).
                         </p>
                         <label class="bg-teal-600 hover:bg-teal-500 text-white text-[11px] px-2.5 py-2 rounded cursor-pointer font-bold flex items-center gap-1.5 justify-center">
-                            <i class="fa-solid fa-file-word"></i> Import Template Resmi (.docx) — Ukuran Otomatis Exact!
+                            <i class="fa-solid fa-file-word"></i> Import Template Resmi (.docx)
                             <input type="file" accept=".docx" class="hidden" onchange="importTemplateDOCX(event)">
                         </label>
                     </div>
@@ -223,16 +226,19 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <span class="text-slate-500">Lebar Stiker</span>
-                                <input type="number" id="stickerW" value="34" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded font-bold">
+                                <input type="number" id="stickerW" value="32" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded font-bold">
                             </div>
                             <div>
                                 <span class="text-slate-500">Tinggi Stiker</span>
-                                <input type="number" id="stickerH" value="20.4" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded font-bold">
+                                <input type="number" id="stickerH" value="18" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded font-bold">
                             </div>
                         </div>
                         <button onclick="autoFitMargins()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded font-bold text-[11px]">
                             <i class="fa-solid fa-crosshairs mr-1"></i> Auto Hitung Margin (Center di Kertas)
                         </button>
+                        <p class="text-[10px] text-amber-600 leading-tight">
+                            ⚠️ Untuk preset GL-A44 Ukur Fisik: JANGAN klik tombol ini — lembar Anda tidak simetris (atas 2mm, bawah 17mm). Margin sudah di-set manual.
+                        </p>
                     </div>
 
                     <div class="space-y-2 border-t pt-3">
@@ -240,19 +246,19 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <span class="text-slate-500">Margin Atas</span>
-                                <input type="number" id="marginTop" value="5.7" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginTop" value="2" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Margin Bawah</span>
-                                <input type="number" id="marginBottom" value="5.7" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginBottom" value="17" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Margin Kiri</span>
-                                <input type="number" id="marginLeft" value="3" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginLeft" value="4" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Margin Kanan</span>
-                                <input type="number" id="marginRight" value="3" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginRight" value="4" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                         </div>
                     </div>
@@ -262,11 +268,11 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <span class="text-slate-500">Gap Horisontal</span>
-                                <input type="number" id="gapX" value="0" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="gapX" value="2" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Gap Vertikal</span>
-                                <input type="number" id="gapY" value="0" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="gapY" value="2" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                         </div>
                     </div>
@@ -297,8 +303,8 @@
                     <div class="bg-slate-50 border border-slate-200 rounded p-2.5 text-[10px] text-slate-500 leading-relaxed">
                         🖨️ <b>Setting wajib saat cetak:</b><br>
                         • Chrome: Margins <b>None</b>, Scale <b>100%</b>, centang <b>Background graphics</b><br>
-                        • Driver Epson: Paper <b>A4</b>, <b>Actual Size</b> (bukan Fit to Page), Borderless <b>OFF</b><br>
-                        • Test print ke kertas polos dulu, bandingkan di depan lampu!
+                        • Driver Epson L120: Paper <b>A4</b>, <b>Actual Size</b> (bukan Fit to Page), Borderless <b>OFF</b><br>
+                        • Pakai tombol <b>Uji Posisi</b> → cetak ke kertas polos → tempel di belakang lembar stiker, sorot lampu!
                     </div>
                 </div>
 
@@ -354,6 +360,10 @@
                             <label class="flex items-center space-x-2">
                                 <input type="checkbox" id="enableCode" checked onchange="renderAllPages()" class="rounded text-blue-600">
                                 <span class="text-slate-700 font-medium">Tampilkan Gambar Barcode</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" id="showCodeText" checked onchange="renderAllPages()" class="rounded text-blue-600">
+                                <span class="text-slate-700 font-medium">Tampilkan Angka di Bawah Barcode</span>
                             </label>
                             <label class="flex items-center space-x-2">
                                 <input type="checkbox" id="showPrice" checked onchange="renderAllPages()" class="rounded text-blue-600">
@@ -557,10 +567,12 @@
         function applyPreset() {
             const preset = document.getElementById('presetSelect').value;
             const presets = {
-                // GL-A44 resmi: 6x14. Dimensi estimasi — import .docx untuk nilai exact!
-                gla84_6x14: { cols: 6, rows: 14, sw: 34,   sh: 20.4, gx: 0,   gy: 0,   fs: '8px'  },
-                gla84:      { cols: 4, rows: 21, sw: 49.8, sh: 13.4, gx: 1,   gy: 0.5, fs: '8px'  },
-                gla44:      { cols: 4, rows: 11, sw: 45.7, sh: 21.2, gx: 2.5, gy: 3.5, fs: '9px'  },
+                // ⭐ GL-A44 hasil pengukuran lembar fisik user:
+                // 6×14, stiker 32×18mm, gap 2mm, margin atas 2mm / kiri 4mm.
+                // TIDAK simetris (bawah sisa 17mm) → margin di-set MANUAL, bukan auto-center!
+                gla84_6x14: { cols: 6, rows: 14, sw: 32,   sh: 18,   gx: 2,   gy: 2,   mt: 2,  mb: 17, ml: 4, mr: 4, fs: '8px' },
+                gla84:      { cols: 4, rows: 21, sw: 49.8, sh: 13.4, gx: 1,   gy: 0.5, fs: '8px' },
+                gla44:      { cols: 4, rows: 11, sw: 45.7, sh: 21.2, gx: 2.5, gy: 3.5, fs: '9px' },
                 tomjerry103:{ cols: 3, rows: 4,  sw: 60,   sh: 45,   gx: 5,   gy: 5,   fs: '10px' }
             };
             const p = presets[preset];
@@ -573,7 +585,18 @@
             document.getElementById('gapX').value = p.gx;
             document.getElementById('gapY').value = p.gy;
             document.getElementById('fontSizeSelect').value = p.fs;
-            autoFitMargins(); // sudah termasuk renderAllPages()
+
+            if (p.mt !== undefined) {
+                // Preset ukur fisik → margin manual (lembar tidak simetris, JANGAN auto-center)
+                document.getElementById('marginTop').value = p.mt;
+                document.getElementById('marginBottom').value = p.mb;
+                document.getElementById('marginLeft').value = p.ml;
+                document.getElementById('marginRight').value = p.mr;
+                renderAllPages();
+            } else {
+                // Preset estimasi lain → center otomatis
+                autoFitMargins();
+            }
         }
 
         function autoFitMargins() {
@@ -687,7 +710,7 @@
                     `Sel    : ${sw.toFixed(2)} × ${sh.toFixed(2)} mm\n` +
                     `Margin : L/R ${ml.toFixed(2)}/${mr.toFixed(2)} mm — T/B ${mt.toFixed(2)}/${mb.toFixed(2)} mm\n\n` +
                     'Cetak dengan: Paper A4, Scale 100% (Actual Size), Margins None.\n' +
-                    'Jika masih meleset tipis, fine-tune dengan Geser Horizontal/Vertikal.');
+                    'Gunakan tombol Uji Posisi untuk verifikasi tanpa buang stiker.');
             } catch (err) {
                 alert('❌ Gagal membaca template: ' + err.message);
             } finally {
@@ -887,308 +910,4 @@
                                     <span class="text-[10px] text-slate-500">Harga</span>
                                     <input type="text" value="${esc(item.harga || '')}" onchange="updatePOItem(${idx}, 'harga', this.value)" class="w-full border p-1 rounded text-xs">
                                 </div>
-                                <div class="col-span-2">
-                                    <span class="text-[10px] text-slate-500">Qty (Jumlah Cetak Stiker)</span>
-                                    <input type="number" value="${item.qty}" min="1" onchange="updatePOItem(${idx}, 'qty', this.value)" class="w-full border p-1 rounded text-xs font-bold text-slate-800">
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            } else {
-                badgeEl.classList.add('hidden');
-                listEl.innerHTML = `<p class="text-slate-400 italic text-center py-6">Belum ada data PO. Upload Excel PO atau Import Live Sync.</p>`;
-            }
-        }
-
-        function updatePOItem(idx, key, value) {
-            poData[idx][key] = key === 'qty' ? parseInt(value) || 1 : value;
-            updatePODataUI();
-            renderAllPages();
-        }
-
-        function removePOItem(idx) {
-            poData.splice(idx, 1);
-            updatePODataUI();
-            renderAllPages();
-        }
-
-        function addNewPOItem() {
-            poData.push({ nama: 'Barang Baru', kode: '200000000001', qty: 1, harga: '', variasi: '' });
-            updatePODataUI();
-            renderAllPages();
-        }
-
-        function clearPOData() {
-            if (confirm('Hapus seluruh data PO?')) {
-                poData = [];
-                currentPage = 1;
-                updatePODataUI();
-                renderAllPages();
-            }
-        }
-
-        // ================= FILTER STIKER =================
-        function getFilteredStickers() {
-            const filterMode = document.getElementById('filterMode')?.value || 'internal_only';
-            const prefix = document.getElementById('prefixCode')?.value || '2000';
-            let list = [];
-            poData.forEach(item => {
-                const isInternal = item.kode && String(item.kode).startsWith(prefix);
-                let include = false;
-                if (filterMode === 'all') include = true;
-                else if (filterMode === 'internal_only' && isInternal) include = true;
-                else if (filterMode === 'pabrik_only' && !isInternal) include = true;
-                if (include) {
-                    for (let i = 0; i < item.qty; i++) list.push(item);
-                }
-            });
-            return list;
-        }
-
-        // ================= RENDER PAGES =================
-        function drawBarcode(svgEl, code, format, height) {
-            if (!svgEl) return;
-            const render = (fmt) => JsBarcode(svgEl, code, {
-                format: fmt, height: height, width: 0.95,
-                displayValue: true, fontSize: 8, margin: 0
-            });
-            try {
-                render(format);
-            } catch (e) {
-                // EAN-13 invalid (bukan 13 digit / checksum salah) → fallback CODE128
-                try { render('CODE128'); } catch (e2) { return; }
-            }
-            // Buat barcode fluid-fit dalam sel (tidak pernah overflow)
-            try {
-                const w = svgEl.getAttribute('width'), h = svgEl.getAttribute('height');
-                if (w && h) {
-                    svgEl.setAttribute('viewBox', `0 0 ${w} ${h}`);
-                    svgEl.removeAttribute('width');
-                    svgEl.removeAttribute('height');
-                    svgEl.style.width = '100%';
-                    svgEl.style.maxHeight = height + 'px';
-                }
-            } catch (e) { }
-        }
-
-        function renderAllPages() {
-            const container = document.getElementById('pagesRenderArea');
-            container.innerHTML = '';
-            pageElements = [];
-
-            const stickers = getFilteredStickers();
-            const cols = parseInt(document.getElementById('gridCols').value) || 6;
-            const rows = parseInt(document.getElementById('gridRows').value) || 14;
-            const sw = parseFloat(document.getElementById('stickerW').value) || 0;
-            const sh = parseFloat(document.getElementById('stickerH').value) || 0;
-            const itemsPerPage = cols * rows;
-
-            const totalPages = Math.max(1, Math.ceil(stickers.length / itemsPerPage) || 1);
-            if (currentPage > totalPages) currentPage = totalPages;
-            if (currentPage < 1) currentPage = 1;
-
-            document.getElementById('pageIndicator').innerText = `Halaman ${currentPage} dari ${totalPages}`;
-            document.getElementById('currentPageNum').innerText = currentPage;
-            document.getElementById('gridInfoText').innerText = `Pratinjau Kertas A4 (${cols} Kolom × ${rows} Baris = ${itemsPerPage} Stiker)`;
-
-            // Banner peringatan jika tidak ada stiker lolos filter
-            if (stickers.length === 0) {
-                const filterMode = document.getElementById('filterMode')?.value || 'internal_only';
-                const labels = { internal_only: 'Hanya Barcode Internal', pabrik_only: 'Hanya Barcode Pabrik', all: 'Semua Item' };
-                const msg = poData.length === 0
-                    ? '⚠️ Belum ada data PO — upload Excel, Live Sync Sheets, atau tambah manual di tab "Data PO".'
-                    : `⚠️ Tidak ada item yang lolos filter "<b>${labels[filterMode]}</b>". Cek tab <b>Desain → Opsi Filter</b> atau kolom Kode barang Anda.`;
-                container.innerHTML = `<div class="no-print w-[210mm] bg-amber-100 border border-amber-300 text-amber-800 text-xs p-3 rounded-lg mb-4">${msg}</div>`;
-            }
-
-            // Ambil semua setting
-            const offX = parseFloat(document.getElementById('offsetX')?.value) || 0;
-            const offY = parseFloat(document.getElementById('offsetY')?.value) || 0;
-            const mtN = parseFloat(document.getElementById('marginTop').value) || 0;
-            const mrN = parseFloat(document.getElementById('marginRight').value) || 0;
-            const mbN = parseFloat(document.getElementById('marginBottom').value) || 0;
-            const mlN = parseFloat(document.getElementById('marginLeft').value) || 0;
-            const gx = document.getElementById('gapX').value + 'mm';
-            const gy = document.getElementById('gapY').value + 'mm';
-            const showBorders = document.getElementById('showBorders').checked;
-            const headerText = document.getElementById('headerText')?.value || '';
-            const enableCode = document.getElementById('enableCode')?.checked;
-            const showPrice = document.getElementById('showPrice')?.checked;
-            const fontSize = document.getElementById('fontSizeSelect')?.value || '8px';
-            const codeFormat = document.getElementById('codeType')?.value || 'CODE128';
-
-            // Tinggi barcode menyesuaikan tinggi stiker fisik
-            let barcodeHeight = rows > 12 ? 15 : 22;
-            if (sh > 0) barcodeHeight = Math.max(8, Math.min(barcodeHeight, Math.round(sh * 0.6)));
-
-            // ==== Render SEMUA halaman (yang non-aktif tersembunyi di layar, semua tercetak) ====
-            for (let p = 0; p < totalPages; p++) {
-                const pageEl = document.createElement('div');
-                pageEl.className = `a4-page print-page ${showBorders ? 'border-dashed-grid' : ''}`;
-                if (p === currentPage - 1) pageEl.classList.add('active');
-                // Offset diaplikasikan via padding (bukan center) agar fine-tune akurat
-                pageEl.style.padding = `${mtN + offY}mm ${mrN - offX}mm ${mbN}mm ${mlN + offX}mm`;
-
-                const gridEl = document.createElement('div');
-                gridEl.className = 'sticker-grid';
-                gridEl.style.gap = `${gy} ${gx}`;
-
-                if (sw > 0 && sh > 0) {
-                    // MODE PRESISI: ukuran sel = ukuran stiker fisik (mm)
-                    gridEl.style.gridTemplateColumns = `repeat(${cols}, ${sw}mm)`;
-                    gridEl.style.gridTemplateRows = `repeat(${rows}, ${sh}mm)`;
-                    gridEl.style.justifyContent = 'start';
-                    gridEl.style.alignContent = 'start';
-                } else {
-                    // MODE FLEKSIBEL (fallback)
-                    gridEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-                    gridEl.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-                }
-
-                const pageStickers = stickers.slice(p * itemsPerPage, (p + 1) * itemsPerPage);
-                const barcodeTasks = [];
-
-                for (let i = 0; i < itemsPerPage; i++) {
-                    const item = pageStickers[i];
-                    const cell = document.createElement('div');
-                    cell.className = 'sticker-item';
-
-                    if (item) {
-                        const codeStr = String(item.kode || '').trim();
-                        let html = `<div style="font-size:${fontSize};" class="w-full text-center leading-tight min-w-0">`;
-                        if (headerText) html += `<div class="font-bold uppercase text-[7px] text-slate-500 truncate">${esc(headerText)}</div>`;
-                        html += `<div class="font-bold truncate uppercase" title="${esc(item.nama)}">${esc(item.nama)}</div>`;
-                        if (item.variasi) html += `<div class="text-[7px] text-slate-600 truncate">${esc(item.variasi)}</div>`;
-                        html += `</div>`;
-
-                        if (enableCode && codeStr) {
-                            const codeId = `code-${p}-${i}`;
-                            html += `<div class="my-0.5 flex justify-center items-center overflow-hidden w-full"><svg id="${codeId}" class="barcode-img"></svg></div>`;
-                            barcodeTasks.push({ id: codeId, code: codeStr });
-                        } else {
-                            html += `<div class="font-mono text-[8px] font-bold tracking-tight my-0.5 truncate w-full text-center">${esc(codeStr)}</div>`;
-                        }
-
-                        if (showPrice && item.harga !== '' && item.harga != null) {
-                            html += `<div class="font-bold text-[7px] border-t w-full text-center pt-0.5 truncate">${formatHarga(item.harga)}</div>`;
-                        }
-                        cell.innerHTML = html;
-                    } else {
-                        cell.innerHTML = `<span class="text-[8px] text-slate-200 no-print select-none">KOSONG</span>`;
-                    }
-                    gridEl.appendChild(cell);
-                }
-
-                pageEl.appendChild(gridEl);
-                container.appendChild(pageEl);
-                pageElements.push(pageEl);
-
-                // Generate barcode SETELAH halaman masuk DOM (sinkron, tanpa setTimeout)
-                barcodeTasks.forEach(t => {
-                    drawBarcode(document.getElementById(t.id), t.code, codeFormat, barcodeHeight);
-                });
-            }
-        }
-
-        function changePage(delta) {
-            const stickers = getFilteredStickers();
-            const cols = parseInt(document.getElementById('gridCols').value) || 6;
-            const rows = parseInt(document.getElementById('gridRows').value) || 14;
-            const itemsPerPage = cols * rows;
-            const totalPages = Math.max(1, Math.ceil(stickers.length / itemsPerPage) || 1);
-
-            currentPage += delta;
-            if (currentPage < 1) currentPage = 1;
-            if (currentPage > totalPages) currentPage = totalPages;
-
-            // Toggle class saja — tidak perlu re-render (barcode sudah ter-generate)
-            pageElements.forEach((el, i) => el.classList.toggle('active', i === currentPage - 1));
-            document.getElementById('pageIndicator').innerText = `Halaman ${currentPage} dari ${totalPages}`;
-            document.getElementById('currentPageNum').innerText = currentPage;
-        }
-
-        // ================= CONTOH EXCEL =================
-        function downloadSamplePO() {
-            const sample = [
-                { "Nama Barang": "ACE MAX 350 ML", "Kode": "200000000001", "Qty": 4, "Harga": 15000, "Variasi": "" },
-                { "Nama Barang": "AIR ZAM-ZAM 1 LITER", "Kode": "200000000002", "Qty": 2, "Harga": 22000, "Variasi": "" },
-                { "Nama Barang": "AL MAHYRA 100 ML", "Kode": "8998009090011", "Qty": 5, "Harga": 9500, "Variasi": "Classic" }
-            ];
-            const ws = XLSX.utils.json_to_sheet(sample);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "PO_Sample");
-            XLSX.writeFile(wb, "Contoh_Excel_PO.xlsx");
-        }
-
-        // ================= LIVE SYNC GOOGLE SHEETS =================
-        function syncFromGoogleSheets(manual = true) {
-            const url = document.getElementById('sheetsUrl').value.trim();
-            if (!url) {
-                if (manual) alert('Masukkan URL CSV Google Sheets!');
-                return;
-            }
-            fetch(url)
-                .then(res => res.text())
-                .then(csvText => {
-                    const workbook = XLSX.read(csvText, { type: 'string' });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-                    processPOJson(json);
-                    // Manual = alert + toast, Auto-sync = toast saja (tidak mengganggu)
-                    if (manual) alert(`Berhasil sinkronisasi ${json.length} item dari Google Sheets!`);
-                    else showToast(`🔄 Auto-sync: ${json.length} item diperbarui`);
-                })
-                .catch(err => {
-                    if (manual) alert('Gagal mengambil data dari Google Sheets. Pastikan link dipublikasikan sebagai CSV.\n\n' + err.message);
-                    else showToast('Auto-sync gagal: ' + err.message, true);
-                });
-        }
-
-        function toggleAutoSync() {
-            const on = document.getElementById('autoSyncCheck').checked;
-            document.getElementById('autoSyncTimerBox').classList.toggle('hidden', !on);
-            clearInterval(autoSyncTimer);
-            if (on) startAutoSync();
-        }
-
-        function startAutoSync() {
-            const sec = Math.max(10, parseInt(document.getElementById('syncInterval').value) || 30);
-            autoSyncTimer = setInterval(() => syncFromGoogleSheets(false), sec * 1000);
-        }
-
-        function restartAutoSync() {
-            clearInterval(autoSyncTimer);
-            if (document.getElementById('autoSyncCheck').checked) startAutoSync();
-        }
-
-        // ================= KALIBRASI PRINTER =================
-        function printCalibration() {
-            const w = window.open('', '_blank', 'width=800,height=900');
-            w.document.write(`<!DOCTYPE html><html><head><style>
-                @page { size: A4; margin: 0; }
-                body { margin: 0; font-family: sans-serif; }
-                .kotak { position:absolute; top:10mm; left:10mm; width:100mm; height:100mm; border:1mm solid black; }
-                .garis { position:absolute; }
-                .g-atas { top:0; left:10mm; width:190mm; border-top:0.5mm solid red; }
-                .g-bawah { bottom:0; left:10mm; width:190mm; border-top:0.5mm solid red; }
-                .g-kiri { left:0; top:10mm; height:277mm; border-left:0.5mm solid red; }
-                .g-kanan { right:0; top:10mm; height:277mm; border-left:0.5mm solid red; }
-                .info { position:absolute; top:118mm; left:10mm; font-size:12px; line-height:1.7; }
-            </style></head><body>
-                <div class="kotak"></div>
-                <div class="garis g-atas"></div><div class="garis g-bawah"></div>
-                <div class="garis g-kiri"></div><div class="garis g-kanan"></div>
-                <div class="info">
-                    ✅ Ukur kotak hitam dengan penggaris → harus tepat <b>100 × 100 mm</b>.<br>
-                    ❌ Lebih kecil/besar → Scale di dialog print / driver BUKAN 100%<br>
-                    ❌ Garis merah terpotong → printer tidak bisa full-bleed (area fisik printer)
-                </div>
-            </body></html>`);
-            w.document.close();
-            w.focus();
-            w.print();
-        }
-    </script>
-</body>
-</html>
+                                <
