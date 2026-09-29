@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cetak Stiker Label PO Excel & Live Sync</title>
+    <title>Cetak Stiker Label PO — GL-A44 + Import Template Resmi</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS (xlsx) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- JsBarcode -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <!-- JSZip untuk baca file .docx -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         @page {
             size: A4 portrait;
@@ -22,48 +24,12 @@
             background-color: #f3f4f6;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
-        /* Layout Print Setup - PERBAIKAN SCROLLBAR PRINT */
-        @media print {
-            html, body {
-                background: white !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                overflow: hidden !important;
-                width: 210mm !important;
-                height: 297mm !important;
-            }
-            .no-print {
-                display: none !important;
-            }
-            .preview-container {
-                padding: 0 !important;
-                margin: 0 !important;
-                background: white !important;
-                overflow: hidden !important;
-                max-height: none !important;
-            }
-            .a4-page {
-                box-shadow: none !important;
-                margin: 0 !important;
-                padding-bottom: 0 !important;
-                page-break-after: always;
-                page-break-inside: avoid;
-                overflow: hidden !important;
-            }
-            /* Garis bantu disembunyikan saat dicetak */
-            .border-dashed-grid .sticker-item {
-                border: none !important;
-            }
-        }
 
-        /* Screen Preview Setup */
+        /* ============ SCREEN PREVIEW ============ */
         .preview-container {
             background-color: #e5e7eb;
             overflow-y: auto;
-            max-height: calc(100vh - 80px);
         }
-        
         .a4-page {
             background: white;
             width: 210mm;
@@ -74,6 +40,9 @@
             box-sizing: border-box;
             overflow: hidden;
         }
+        /* Di layar: hanya halaman aktif yang tampil */
+        .print-page { display: none; }
+        .print-page.active { display: block; }
 
         .sticker-grid {
             display: grid;
@@ -81,7 +50,6 @@
             height: 100%;
             box-sizing: border-box;
         }
-
         .sticker-item {
             box-sizing: border-box;
             display: flex;
@@ -92,22 +60,68 @@
             overflow: hidden;
             position: relative;
             background: white;
+            min-width: 0;
         }
-
         .border-dashed-grid .sticker-item {
             border: 0.5px dashed #cbd5e1;
         }
-
         .barcode-img {
             max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
+        }
+
+        /* ============ PRINT ============ */
+        @media print {
+            html, body {
+                width: 210mm;
+                height: auto !important;
+                display: block !important;
+                overflow: visible !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+            }
+            .no-print { display: none !important; }
+
+            .print-root {
+                display: block !important;
+                overflow: visible !important;
+            }
+            .preview-container {
+                display: block !important;
+                width: 210mm;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: white !important;
+                overflow: visible !important;
+                max-height: none !important;
+            }
+            #pagesRenderArea {
+                display: block !important;
+                width: 210mm;
+            }
+            /* Saat print: SEMUA halaman tampil */
+            .print-page {
+                display: block !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                width: 210mm;
+                height: 296.5mm; /* 0.5mm dikurangi utk anti rounding error */
+                page-break-after: always;
+                page-break-inside: avoid;
+                overflow: hidden;
+            }
+            .print-page:last-of-type {
+                page-break-after: auto; /* cegah halaman kosong ekstra */
+            }
+            .border-dashed-grid .sticker-item {
+                border: none !important;
+            }
         }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
 
-    <!-- HEADER / NAVBAR -->
+    <!-- ================= HEADER / NAVBAR ================= -->
     <header class="no-print bg-slate-900 text-white px-6 py-3 flex justify-between items-center shadow-md shrink-0">
         <div class="flex items-center space-x-3">
             <div class="bg-blue-600 p-2 rounded-lg">
@@ -115,33 +129,36 @@
             </div>
             <div>
                 <h1 class="font-bold text-lg leading-tight">Cetak Stiker Label PO</h1>
-                <p class="text-xs text-slate-400">Generator Label 84 Stiker (6x14) + Auto Match SKU</p>
+                <p class="text-xs text-slate-400">GL-A44 (6×14) + Import Template Resmi .docx + Auto Match SKU</p>
             </div>
         </div>
 
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-2">
             <button onclick="downloadSamplePO()" class="bg-slate-700 hover:bg-slate-600 text-xs px-3 py-2 rounded-md transition flex items-center gap-1.5">
                 <i class="fa-solid fa-file-excel text-green-400"></i> Contoh Excel
             </button>
             <button onclick="openTab('live-sync')" class="bg-amber-600 hover:bg-amber-500 text-xs px-3 py-2 rounded-md transition flex items-center gap-1.5">
-                <i class="fa-solid fa-rotate"></i> Live Sync Sheets
+                <i class="fa-solid fa-rotate"></i> Live Sync
             </button>
             <button onclick="openTab('master-sku')" class="bg-purple-600 hover:bg-purple-500 text-xs px-3 py-2 rounded-md transition flex items-center gap-1.5">
-                <i class="fa-solid fa-database"></i> Upload Master SKU
+                <i class="fa-solid fa-database"></i> Master SKU
             </button>
             <label class="bg-emerald-600 hover:bg-emerald-500 text-xs px-3 py-2 rounded-md transition flex items-center gap-1.5 cursor-pointer">
                 <i class="fa-solid fa-file-import"></i> Upload Excel PO
                 <input type="file" id="fileExcelPO" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUploadPO(event)">
             </label>
+            <button onclick="printCalibration()" class="bg-slate-600 hover:bg-slate-500 text-xs px-3 py-2 rounded-md transition flex items-center gap-1.5">
+                <i class="fa-solid fa-ruler"></i> Kalibrasi
+            </button>
             <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-500 text-xs px-4 py-2 rounded-md transition font-semibold flex items-center gap-1.5 shadow">
                 <i class="fa-solid fa-print"></i> Cetak (Print)
             </button>
         </div>
     </header>
 
-    <!-- MAIN CONTENT CONTAINER -->
-    <div class="flex-1 flex overflow-hidden">
-        
+    <!-- ================= MAIN CONTENT ================= -->
+    <div class="flex-1 flex overflow-hidden print-root">
+
         <!-- LEFT CONTROL PANEL -->
         <div class="no-print w-[450px] bg-white border-r border-slate-200 flex flex-col h-full shrink-0 shadow-lg z-10">
             <!-- TABS HEADER -->
@@ -153,10 +170,10 @@
                     <i class="fa-solid fa-paint-brush mr-1"></i> Desain
                 </button>
                 <button onclick="switchTab('live-sync')" id="btn-tab-live-sync" class="tab-btn flex-1 py-3 text-center text-slate-500 border-b-2 border-transparent hover:text-slate-700">
-                    <i class="fa-solid fa-cloud-arrow-down mr-1"></i> Live Sync
+                    <i class="fa-solid fa-cloud-arrow-down mr-1"></i> Sync
                 </button>
                 <button onclick="switchTab('master-sku')" id="btn-tab-master-sku" class="tab-btn flex-1 py-3 text-center text-slate-500 border-b-2 border-transparent hover:text-slate-700 relative">
-                    <i class="fa-solid fa-database mr-1"></i> Master SKU
+                    <i class="fa-solid fa-database mr-1"></i> Master
                     <span id="badge-master-count" class="hidden absolute top-1 right-1 bg-purple-600 text-white text-[9px] px-1 rounded-full">0</span>
                 </button>
                 <button onclick="switchTab('data-po')" id="btn-tab-data-po" class="tab-btn flex-1 py-3 text-center text-slate-500 border-b-2 border-transparent hover:text-slate-700 relative">
@@ -165,31 +182,57 @@
                 </button>
             </div>
 
-            <!-- TAB CONTENTS (SCROLLABLE) -->
+            <!-- TAB CONTENTS -->
             <div class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
 
-                <!-- TAB 1: KERTAS & GRID -->
+                <!-- ============ TAB 1: KERTAS & GRID ============ -->
                 <div id="tab-kertas" class="tab-content space-y-4">
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
                         <label class="block font-bold text-slate-700 mb-1">Preset Label</label>
                         <select id="presetSelect" onchange="applyPreset()" class="w-full border border-slate-300 rounded p-2 bg-white text-xs font-bold text-blue-900">
-                            <option value="gla84_6x14" selected>Layout 84 Stiker (6 Kolom x 14 Baris)</option>
-                            <option value="gla84">Layout 84 Stiker (4 Kolom x 21 Baris)</option>
-                            <option value="gla44">Blueprint GL-A44 (44 Stiker - 4x11)</option>
+                            <option value="gla84_6x14" selected>Blueprint GL-A44 Resmi (6 Kolom × 14 Baris = 84)</option>
+                            <option value="gla84">Layout 84 Stiker (4 Kolom × 21 Baris)</option>
+                            <option value="gla44">Layout 44 Stiker (4 Kolom × 11 Baris)</option>
                             <option value="tomjerry103">Tom & Jerry No. 103 (12 Stiker)</option>
                             <option value="custom">Kustom Layout</option>
                         </select>
+                        <p class="text-[10px] text-slate-500 leading-tight">
+                            💡 Preset = estimasi. Untuk presisi maksimal, gunakan tombol di bawah untuk membaca template resmi (.docx) langsung dari website Blueprint.
+                        </p>
+                        <label class="bg-teal-600 hover:bg-teal-500 text-white text-[11px] px-2.5 py-2 rounded cursor-pointer font-bold flex items-center gap-1.5 justify-center">
+                            <i class="fa-solid fa-file-word"></i> Import Template Resmi (.docx) — Ukuran Otomatis Exact!
+                            <input type="file" accept=".docx" class="hidden" onchange="importTemplateDOCX(event)">
+                        </label>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
                         <div>
                             <label class="block text-slate-600 font-medium mb-1">Jumlah Kolom</label>
-                            <input type="number" id="gridCols" value="6" onchange="renderAllPages()" class="w-full border border-slate-300 rounded p-1.5 font-bold">
+                            <input type="number" id="gridCols" value="6" min="1" onchange="renderAllPages()" class="w-full border border-slate-300 rounded p-1.5 font-bold">
                         </div>
                         <div>
                             <label class="block text-slate-600 font-medium mb-1">Jumlah Baris</label>
-                            <input type="number" id="gridRows" value="14" onchange="renderAllPages()" class="w-full border border-slate-300 rounded p-1.5 font-bold">
+                            <input type="number" id="gridRows" value="14" min="1" onchange="renderAllPages()" class="w-full border border-slate-300 rounded p-1.5 font-bold">
                         </div>
+                    </div>
+
+                    <!-- UKURAN STIKER FISIK -->
+                    <div class="space-y-2 border-t pt-3">
+                        <h4 class="font-bold text-slate-700">Ukuran Stiker Fisik (mm)</h4>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <span class="text-slate-500">Lebar Stiker</span>
+                                <input type="number" id="stickerW" value="34" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded font-bold">
+                            </div>
+                            <div>
+                                <span class="text-slate-500">Tinggi Stiker</span>
+                                <input type="number" id="stickerH" value="20.4" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded font-bold">
+                            </div>
+                        </div>
+                        <button onclick="autoFitMargins()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded font-bold text-[11px]">
+                            <i class="fa-solid fa-crosshairs mr-1"></i> Auto Hitung Margin (Center di Kertas)
+                        </button>
                     </div>
 
                     <div class="space-y-2 border-t pt-3">
@@ -197,19 +240,19 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <span class="text-slate-500">Margin Atas</span>
-                                <input type="number" id="marginTop" value="5" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginTop" value="5.7" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Margin Bawah</span>
-                                <input type="number" id="marginBottom" value="5" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginBottom" value="5.7" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Margin Kiri</span>
-                                <input type="number" id="marginLeft" value="4" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginLeft" value="3" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Margin Kanan</span>
-                                <input type="number" id="marginRight" value="4" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginRight" value="3" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                         </div>
                     </div>
@@ -219,13 +262,29 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <span class="text-slate-500">Gap Horisontal</span>
-                                <input type="number" id="gapX" value="1" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="gapX" value="0" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Gap Vertikal</span>
-                                <input type="number" id="gapY" value="0.5" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="gapY" value="0" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                         </div>
+                    </div>
+
+                    <!-- OFFSET / FINE TUNE -->
+                    <div class="space-y-2 border-t pt-3">
+                        <h4 class="font-bold text-slate-700">Fine-Tune Posisi Cetak (mm)</h4>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <span class="text-slate-500">Geser Kanan (+) / Kiri (−)</span>
+                                <input type="number" id="offsetX" value="0" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                            </div>
+                            <div>
+                                <span class="text-slate-500">Geser Bawah (+) / Atas (−)</span>
+                                <input type="number" id="offsetY" value="0" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-400 leading-tight">Contoh: cetakan meleset ke kanan 2mm → isi Geser Horizontal = −2</p>
                     </div>
 
                     <div class="border-t pt-3">
@@ -234,12 +293,18 @@
                             <span class="font-medium text-slate-700">Tampilkan Garis Bantu Stiker (Layar Saja)</span>
                         </label>
                     </div>
+
+                    <div class="bg-slate-50 border border-slate-200 rounded p-2.5 text-[10px] text-slate-500 leading-relaxed">
+                        🖨️ <b>Setting wajib saat cetak:</b><br>
+                        • Chrome: Margins <b>None</b>, Scale <b>100%</b>, centang <b>Background graphics</b><br>
+                        • Driver Epson: Paper <b>A4</b>, <b>Actual Size</b> (bukan Fit to Page), Borderless <b>OFF</b><br>
+                        • Test print ke kertas polos dulu, bandingkan di depan lampu!
+                    </div>
                 </div>
 
-                <!-- TAB 2: DESAIN & AUTO FILTER -->
+                <!-- ============ TAB 2: DESAIN & AUTO FILTER ============ -->
                 <div id="tab-desain" class="tab-content hidden space-y-4">
-                    
-                    <!-- AUTO FILTER SECTION -->
+
                     <div class="bg-amber-50 border border-amber-300 rounded-lg p-3 space-y-2">
                         <div class="flex items-center space-x-2">
                             <i class="fa-solid fa-filter text-amber-600"></i>
@@ -248,7 +313,6 @@
                         <p class="text-[11px] text-amber-700 leading-tight">
                             Filter otomatis barang mana saja yang akan dicetak labelnya.
                         </p>
-                        
                         <div class="space-y-1.5 pt-1">
                             <label class="block text-slate-700 font-medium">Opsi Filter Cetak:</label>
                             <select id="filterMode" onchange="renderAllPages()" class="w-full border border-slate-300 rounded p-1.5 bg-white font-medium">
@@ -257,28 +321,24 @@
                                 <option value="all">⚪ Cetak Semua Item PO (Tanpa Filter)</option>
                             </select>
                         </div>
-
                         <div class="pt-1">
                             <span class="text-slate-600">Awalan Kode Internal Toko:</span>
-                            <input type="text" id="prefixCode" value="2000" oninput="renderAllPages()" class="w-24 border p-1 rounded ml-2 bg-white text-center font-bold">
+                            <input type="text" id="prefixCode" value="2000" oninput="debouncedRender()" class="w-24 border p-1 rounded ml-2 bg-white text-center font-bold">
                         </div>
                     </div>
 
-                    <!-- DESAIN CONTENT LAYOUT -->
                     <div class="space-y-3 border-t pt-3">
                         <h4 class="font-bold text-slate-700">Opsi Elemen Stiker</h4>
-                        
                         <div>
                             <label class="block text-slate-600 mb-1">Judul Header Stiker (Opsional)</label>
-                            <input type="text" id="headerText" placeholder="Contoh: APOTEK WAHDAH / PO" oninput="renderAllPages()" class="w-full border p-1.5 rounded">
+                            <input type="text" id="headerText" placeholder="Contoh: APOTEK WAHDAH / PO" oninput="debouncedRender()" class="w-full border p-1.5 rounded">
                         </div>
-
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="block text-slate-600 mb-1">Tipe Barcode</label>
                                 <select id="codeType" onchange="renderAllPages()" class="w-full border p-1.5 rounded">
                                     <option value="CODE128">Barcode 128 (Standard)</option>
-                                    <option value="EAN13">EAN-13</option>
+                                    <option value="EAN13">EAN-13 (13 digit)</option>
                                 </select>
                             </div>
                             <div>
@@ -290,7 +350,6 @@
                                 </select>
                             </div>
                         </div>
-
                         <div class="space-y-2 pt-2">
                             <label class="flex items-center space-x-2">
                                 <input type="checkbox" id="enableCode" checked onchange="renderAllPages()" class="rounded text-blue-600">
@@ -304,25 +363,23 @@
                     </div>
                 </div>
 
-                <!-- TAB 3: LIVE SYNC SHEETS -->
+                <!-- ============ TAB 3: LIVE SYNC ============ -->
                 <div id="tab-live-sync" class="tab-content hidden space-y-4">
                     <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
                         <h4 class="font-bold text-amber-900 flex items-center gap-1.5">
                             <i class="fa-solid fa-link text-amber-600"></i> Google Sheets Live Sync
                         </h4>
                         <p class="text-slate-600 text-[11px] leading-relaxed">
-                            Hubungkan Google Sheets berisi data PO. Pastikan link Google Sheets diset ke <strong>"Publikasikan ke Web"</strong> sebagai CSV.
+                            Hubungkan Google Sheets berisi data PO. Pastikan link diset ke <strong>"Publikasikan ke Web"</strong> sebagai CSV.
                         </p>
                     </div>
-
                     <div class="space-y-2">
                         <label class="block font-medium text-slate-700">URL CSV Google Sheets:</label>
                         <input type="text" id="sheetsUrl" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv" class="w-full border p-2 rounded text-xs">
-                        <button onclick="syncFromGoogleSheets()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded transition flex justify-center items-center gap-2">
+                        <button onclick="syncFromGoogleSheets(true)" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded transition flex justify-center items-center gap-2">
                             <i class="fa-solid fa-sync"></i> Sync Data PO Sekarang
                         </button>
                     </div>
-
                     <div class="border-t pt-3 space-y-2">
                         <label class="flex items-center space-x-2">
                             <input type="checkbox" id="autoSyncCheck" onchange="toggleAutoSync()" class="rounded text-amber-600">
@@ -330,19 +387,19 @@
                         </label>
                         <div id="autoSyncTimerBox" class="hidden flex items-center space-x-2 pl-6">
                             <span class="text-slate-500">Setiap</span>
-                            <input type="number" id="syncInterval" value="30" min="10" class="w-16 border p-1 rounded text-center">
+                            <input type="number" id="syncInterval" value="30" min="10" onchange="restartAutoSync()" class="w-16 border p-1 rounded text-center">
                             <span class="text-slate-500">Detik</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 4: MASTER DATA SKU -->
+                <!-- ============ TAB 4: MASTER SKU ============ -->
                 <div id="tab-master-sku" class="tab-content hidden space-y-4">
                     <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 space-y-2">
                         <div class="flex justify-between items-center">
                             <h4 class="font-bold text-purple-900">MASTER DATA SKU & BARCODE</h4>
                             <label class="bg-purple-600 hover:bg-purple-500 text-white text-[11px] px-2.5 py-1 rounded cursor-pointer font-medium">
-                                <i class="fa-solid fa-upload"></i> Import Excel Master
+                                <i class="fa-solid fa-upload"></i> Import Excel
                                 <input type="file" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUploadMaster(event)">
                             </label>
                         </div>
@@ -350,21 +407,19 @@
                             Database utama untuk auto-fill / VLOOKUP pesanan PO secara otomatis.
                         </p>
                     </div>
-
                     <div class="flex justify-between items-center border-b pb-2">
                         <span class="font-bold text-slate-700">Total Item Master: <span id="masterTotalCount" class="text-purple-700">0</span></span>
                         <div class="space-x-2">
-                            <button onclick="applyVLookupToPO()" class="text-blue-600 hover:underline font-bold">⚡ Cocokkan ke PO Sekarang</button>
-                            <button onclick="clearMasterData()" class="text-red-500 hover:underline">Hapus Master</button>
+                            <button onclick="applyVLookupToPO()" class="text-blue-600 hover:underline font-bold">⚡ Cocokkan ke PO</button>
+                            <button onclick="clearMasterData()" class="text-red-500 hover:underline">Hapus</button>
                         </div>
                     </div>
-
                     <div id="masterPreviewList" class="space-y-1.5 max-h-[300px] overflow-y-auto border p-2 rounded bg-slate-50 text-[11px]">
                         <p class="text-slate-400 italic text-center py-4">Belum ada Master Data SKU diunggah.</p>
                     </div>
                 </div>
 
-                <!-- TAB 5: DATA PO STIKER -->
+                <!-- ============ TAB 5: DATA PO ============ -->
                 <div id="tab-data-po" class="tab-content hidden space-y-3">
                     <div class="flex justify-between items-center">
                         <h4 class="font-bold text-slate-700">DAFTAR DATA PO STIKER</h4>
@@ -377,11 +432,9 @@
                             </button>
                         </div>
                     </div>
-
                     <div id="poItemList" class="space-y-3 max-h-[400px] overflow-y-auto pr-1">
                         <p class="text-slate-400 italic text-center py-6">Belum ada data PO. Upload Excel PO atau Import Live Sync.</p>
                     </div>
-
                     <div class="border-t pt-2 flex justify-between items-center">
                         <span class="text-slate-500">Total Jenis Item: <strong id="poTotalItems">0</strong></span>
                         <button onclick="clearPOData()" class="text-red-500 hover:underline font-medium">Hapus Semua Data</button>
@@ -393,11 +446,11 @@
 
         <!-- RIGHT PREVIEW PANEL -->
         <div class="flex-1 preview-container p-6 flex flex-col items-center">
-            
+
             <div class="no-print mb-4 flex items-center justify-between w-[210mm]">
                 <div class="flex items-center space-x-2 text-slate-700 font-bold text-sm">
                     <i class="fa-solid fa-eye text-blue-600"></i>
-                    <span>Pratinjau Kertas A4 (6 Kolom x 14 Baris = 84 Stiker)</span>
+                    <span id="gridInfoText">Pratinjau Kertas A4</span>
                     <span id="pageIndicator" class="text-xs bg-slate-200 px-2 py-0.5 rounded text-slate-600 font-normal">Halaman 1 dari 1</span>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -411,38 +464,85 @@
                 </div>
             </div>
 
-            <!-- CONTAINER UNTUK HALAMAN A4 -->
             <div id="pagesRenderArea" class="flex flex-col items-center space-y-8">
                 <!-- Pages render here -->
             </div>
-
         </div>
-
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="hidden fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-lg shadow-xl max-w-xs"></div>
+
+    <!-- ================= JAVASCRIPT ================= -->
     <script>
-        // GLOBAL STATE
+        // ================= GLOBAL STATE =================
         let masterSKUData = [];
         let poData = [];
         let currentPage = 1;
         let autoSyncTimer = null;
+        let pageElements = [];
+        let renderTimer = null;
 
-        // INIT APP ON LOAD
+        const TWIPS_PER_MM = 56.6929;
+
+        // ================= INIT =================
         window.onload = function() {
             loadMasterDataFromStorage();
+            loadPODataFromStorage();
             applyPreset();
-            renderAllPages();
         };
 
-        // SWITCH TABS
+        // ================= HELPERS =================
+        function esc(s) {
+            return String(s ?? '')
+                .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+        }
+
+        function cleanText(str) {
+            if (!str) return '';
+            return String(str).toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+
+        function formatHarga(h) {
+            const s = String(h ?? '').trim();
+            if (!s) return '';
+            const n = parseInt(s.replace(/[^\d]/g, ''), 10);
+            if (isNaN(n)) return esc(s);
+            return 'Rp ' + n.toLocaleString('id-ID');
+        }
+
+        function debouncedRender() {
+            clearTimeout(renderTimer);
+            renderTimer = setTimeout(renderAllPages, 250);
+        }
+
+        function safeSet(key, val) {
+            try {
+                localStorage.setItem(key, val);
+            } catch (e) {
+                showToast('Gagal simpan data: penyimpanan browser penuh!', true);
+            }
+        }
+
+        let toastTimer;
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.remove('hidden');
+            t.classList.toggle('bg-red-600', isError);
+            t.classList.toggle('bg-slate-900', !isError);
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.classList.add('hidden'), 3000);
+        }
+
+        // ================= TABS =================
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('border-blue-600', 'text-blue-600', 'font-bold');
                 btn.classList.add('text-slate-500', 'border-transparent');
             });
-
             document.getElementById(`tab-${tabName}`).classList.remove('hidden');
             const activeBtn = document.getElementById(`btn-tab-${tabName}`);
             activeBtn.classList.add('border-blue-600', 'text-blue-600', 'font-bold');
@@ -453,80 +553,161 @@
             switchTab(tabName);
         }
 
-        // PRESET KERTAS
+        // ================= PRESET KERTAS =================
         function applyPreset() {
             const preset = document.getElementById('presetSelect').value;
-            if (preset === 'gla84_6x14') {
-                document.getElementById('gridCols').value = 6;
-                document.getElementById('gridRows').value = 14;
-                document.getElementById('marginTop').value = 5;
-                document.getElementById('marginBottom').value = 5;
-                document.getElementById('marginLeft').value = 4;
-                document.getElementById('marginRight').value = 4;
-                document.getElementById('gapX').value = 1;
-                document.getElementById('gapY').value = 0.5;
-                if (document.getElementById('fontSizeSelect')) {
-                    document.getElementById('fontSizeSelect').value = '8px';
-                }
-            } else if (preset === 'gla84') {
-                document.getElementById('gridCols').value = 4;
-                document.getElementById('gridRows').value = 21;
-                document.getElementById('marginTop').value = 5;
-                document.getElementById('marginBottom').value = 5;
-                document.getElementById('marginLeft').value = 5;
-                document.getElementById('marginRight').value = 5;
-                document.getElementById('gapX').value = 1;
-                document.getElementById('gapY').value = 0.5;
-                if (document.getElementById('fontSizeSelect')) {
-                    document.getElementById('fontSizeSelect').value = '8px';
-                }
-            } else if (preset === 'gla44') {
-                document.getElementById('gridCols').value = 4;
-                document.getElementById('gridRows').value = 11;
-                document.getElementById('marginTop').value = 9;
-                document.getElementById('marginBottom').value = 9;
-                document.getElementById('marginLeft').value = 7;
-                document.getElementById('marginRight').value = 7;
-                document.getElementById('gapX').value = 2;
-                document.getElementById('gapY').value = 0;
-                if (document.getElementById('fontSizeSelect')) {
-                    document.getElementById('fontSizeSelect').value = '9px';
-                }
-            } else if (preset === 'tomjerry103') {
-                document.getElementById('gridCols').value = 3;
-                document.getElementById('gridRows').value = 4;
-                document.getElementById('marginTop').value = 15;
-                document.getElementById('marginBottom').value = 15;
-                document.getElementById('marginLeft').value = 9;
-                document.getElementById('marginRight').value = 9;
-                document.getElementById('gapX').value = 5;
-                document.getElementById('gapY').value = 5;
-                if (document.getElementById('fontSizeSelect')) {
-                    document.getElementById('fontSizeSelect').value = '10px';
-                }
+            const presets = {
+                // GL-A44 resmi: 6x14. Dimensi estimasi — import .docx untuk nilai exact!
+                gla84_6x14: { cols: 6, rows: 14, sw: 34,   sh: 20.4, gx: 0,   gy: 0,   fs: '8px'  },
+                gla84:      { cols: 4, rows: 21, sw: 49.8, sh: 13.4, gx: 1,   gy: 0.5, fs: '8px'  },
+                gla44:      { cols: 4, rows: 11, sw: 45.7, sh: 21.2, gx: 2.5, gy: 3.5, fs: '9px'  },
+                tomjerry103:{ cols: 3, rows: 4,  sw: 60,   sh: 45,   gx: 5,   gy: 5,   fs: '10px' }
+            };
+            const p = presets[preset];
+            if (!p) return; // custom = jangan utak-atik
+
+            document.getElementById('gridCols').value = p.cols;
+            document.getElementById('gridRows').value = p.rows;
+            document.getElementById('stickerW').value = p.sw;
+            document.getElementById('stickerH').value = p.sh;
+            document.getElementById('gapX').value = p.gx;
+            document.getElementById('gapY').value = p.gy;
+            document.getElementById('fontSizeSelect').value = p.fs;
+            autoFitMargins(); // sudah termasuk renderAllPages()
+        }
+
+        function autoFitMargins() {
+            const cols = parseInt(document.getElementById('gridCols').value) || 1;
+            const rows = parseInt(document.getElementById('gridRows').value) || 1;
+            const sw = parseFloat(document.getElementById('stickerW').value) || 0;
+            const sh = parseFloat(document.getElementById('stickerH').value) || 0;
+            if (sw <= 0 || sh <= 0) {
+                showToast('Isi ukuran stiker (mm) terlebih dahulu!', true);
+                return;
             }
+            const gx = parseFloat(document.getElementById('gapX').value) || 0;
+            const gy = parseFloat(document.getElementById('gapY').value) || 0;
+            const totalW = cols * sw + (cols - 1) * gx;
+            const totalH = rows * sh + (rows - 1) * gy;
+
+            if (totalW > 210.5 || totalH > 297.5) {
+                alert(`Total grid ${totalW.toFixed(1)} × ${totalH.toFixed(1)} mm melebihi kertas A4 (210 × 297 mm)!\nKecilkan ukuran stiker / gap / jumlah kolom-baris.`);
+                return;
+            }
+            const ml = ((210 - totalW) / 2).toFixed(2);
+            const mt = ((297 - totalH) / 2).toFixed(2);
+            document.getElementById('marginLeft').value = ml;
+            document.getElementById('marginRight').value = ml;
+            document.getElementById('marginTop').value = mt;
+            document.getElementById('marginBottom').value = mt;
             renderAllPages();
         }
 
-        // SMART CLEAN STRING FOR VLOOKUP
-        function cleanText(str) {
-            if (!str) return '';
-            return String(str).toLowerCase().replace(/[^a-z0-9]/g, '');
+        // ================= IMPORT TEMPLATE RESMI (.DOCX) =================
+        function localEls(root, name) {
+            return Array.from(root.getElementsByTagName('*')).filter(el => el.localName === name);
         }
 
-        // LOAD / SAVE MASTER DATA
+        async function importTemplateDOCX(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                const zip = await JSZip.loadAsync(file);
+                const xmlFile = zip.file('word/document.xml');
+                if (!xmlFile) throw new Error('document.xml tidak ditemukan. Pastikan file .docx (bukan .doc lama).');
+
+                const xmlText = await xmlFile.async('string');
+                const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+                if (doc.getElementsByTagName('parsererror').length) throw new Error('XML di dalam file rusak.');
+
+                // Pilih tabel dengan grid terbesar (paling mungkin = tabel label)
+                const tables = localEls(doc, 'tbl');
+                if (!tables.length) throw new Error('Tidak ada tabel di template.');
+                let bestCols = [], bestRows = [];
+                for (const t of tables) {
+                    const cols = localEls(t, 'gridCol').map(el => parseInt(el.getAttribute('w:w')) / TWIPS_PER_MM);
+                    const rows = localEls(t, 'tr');
+                    if (cols.length && rows.length && (cols.length * rows.length) > (bestCols.length * bestRows.length)) {
+                        bestCols = cols; bestRows = rows;
+                    }
+                }
+                if (!bestCols.length || !bestRows.length) throw new Error('Dimensi tabel tidak ditemukan.');
+
+                // Tinggi baris (dari baris pertama yang punya trHeight)
+                let rowH = 0;
+                for (const r of bestRows) {
+                    const th = localEls(r, 'trHeight')[0];
+                    if (th) {
+                        const v = parseFloat(th.getAttribute('w:val'));
+                        if (v > 0) { rowH = v / TWIPS_PER_MM; break; }
+                    }
+                }
+                if (!rowH) throw new Error('Tinggi baris tidak ditemukan di template.');
+
+                // Margin halaman dari section properties template (paling akurat!)
+                let ml = null, mt = null;
+                const sectPr = localEls(doc, 'sectPr')[0];
+                if (sectPr) {
+                    const pgMar = localEls(sectPr, 'pgMar')[0];
+                    if (pgMar) {
+                        ml = parseInt(pgMar.getAttribute('w:left')) / TWIPS_PER_MM;
+                        mt = parseInt(pgMar.getAttribute('w:top')) / TWIPS_PER_MM;
+                    }
+                }
+
+                const cols = bestCols.length;
+                const rows = bestRows.length;
+                const sw = bestCols[0]; // asumsi kolom seragam (standar template label)
+                const sh = rowH;
+                const totalW = cols * sw;
+                const totalH = rows * sh;
+
+                // Fallback ke center jika margin template tidak masuk akal
+                if (ml == null || isNaN(ml) || ml < 0 || ml + totalW > 210.5) ml = (210 - totalW) / 2;
+                if (mt == null || isNaN(mt) || mt < 0 || mt + totalH > 297.5) mt = (297 - totalH) / 2;
+                const mr = 210 - ml - totalW;
+                const mb = 297 - mt - totalH;
+
+                // Isi form otomatis
+                document.getElementById('gridCols').value = cols;
+                document.getElementById('gridRows').value = rows;
+                document.getElementById('stickerW').value = sw.toFixed(2);
+                document.getElementById('stickerH').value = sh.toFixed(2);
+                document.getElementById('gapX').value = 0;
+                document.getElementById('gapY').value = 0;
+                document.getElementById('marginLeft').value = ml.toFixed(2);
+                document.getElementById('marginRight').value = mr.toFixed(2);
+                document.getElementById('marginTop').value = mt.toFixed(2);
+                document.getElementById('marginBottom').value = mb.toFixed(2);
+                document.getElementById('presetSelect').value = 'custom';
+
+                renderAllPages();
+                alert('✅ Template resmi berhasil dibaca!\n\n' +
+                    `Grid   : ${cols} kolom × ${rows} baris = ${cols * rows} stiker\n` +
+                    `Sel    : ${sw.toFixed(2)} × ${sh.toFixed(2)} mm\n` +
+                    `Margin : L/R ${ml.toFixed(2)}/${mr.toFixed(2)} mm — T/B ${mt.toFixed(2)}/${mb.toFixed(2)} mm\n\n` +
+                    'Cetak dengan: Paper A4, Scale 100% (Actual Size), Margins None.\n' +
+                    'Jika masih meleset tipis, fine-tune dengan Geser Horizontal/Vertikal.');
+            } catch (err) {
+                alert('❌ Gagal membaca template: ' + err.message);
+            } finally {
+                event.target.value = '';
+            }
+        }
+
+        // ================= MASTER DATA SKU =================
         function loadMasterDataFromStorage() {
             const saved = localStorage.getItem('MASTER_SKU_DATA');
             if (saved) {
                 try {
-                    masterSKUData = JSON.parse(saved);
+                    masterSKUData = JSON.parse(saved) || [];
                     updateMasterUI();
-                } catch(e) { console.error(e); }
+                } catch (e) { console.error(e); }
             }
         }
 
         function saveMasterDataToStorage() {
-            localStorage.setItem('MASTER_SKU_DATA', JSON.stringify(masterSKUData));
+            safeSet('MASTER_SKU_DATA', JSON.stringify(masterSKUData));
             updateMasterUI();
         }
 
@@ -541,13 +722,12 @@
         function handleFileUploadMaster(e) {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(event) {
                 const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
+                const workbook = XLSX.read(data, { type: 'array' });
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                const json = XLSX.utils.sheet_to_json(sheet, {defval: ''});
+                const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
                 masterSKUData = json.map(row => {
                     const keys = Object.keys(row);
@@ -555,13 +735,13 @@
                     let nama = row['Nama Barang'] || row['Nama'] || row['Deskripsi'] || row[keys[1]] || '';
                     let harga = row['Harga'] || row['Harga Jual'] || row['Price'] || '';
                     let variasi = row['Variasi'] || row['Variant'] || '';
-
                     return { barcode: String(barcode).trim(), nama: String(nama).trim(), harga, variasi, _raw: row };
                 });
 
                 saveMasterDataToStorage();
                 alert(`Berhasil mengimpor ${masterSKUData.length} Master SKU!`);
                 applyVLookupToPO();
+                e.target.value = '';
             };
             reader.readAsArrayBuffer(file);
         }
@@ -575,36 +755,42 @@
             if (masterSKUData.length > 0) {
                 badgeEl.innerText = masterSKUData.length;
                 badgeEl.classList.remove('hidden');
-
-                listEl.innerHTML = masterSKUData.slice(0, 30).map((item, idx) => `
+                listEl.innerHTML = masterSKUData.slice(0, 30).map(item => `
                     <div class="bg-white p-2 rounded border border-slate-200">
-                        <div class="font-bold text-purple-800">Barcode: ${item.barcode || '-'}</div>
-                        <div class="text-slate-700">${item.nama}</div>
+                        <div class="font-bold text-purple-800">Barcode: ${esc(item.barcode || '-')}</div>
+                        <div class="text-slate-700">${esc(item.nama)}</div>
                     </div>
-                `).join('');
-
-                if (masterSKUData.length > 30) {
-                    listEl.innerHTML += `<div class="text-center text-slate-400 py-1">... dan ${masterSKUData.length - 30} item lainnya.</div>`;
-                }
+                `).join('') + (masterSKUData.length > 30
+                    ? `<div class="text-center text-slate-400 py-1">... dan ${masterSKUData.length - 30} item lainnya.</div>` : '');
             } else {
                 badgeEl.classList.add('hidden');
                 listEl.innerHTML = `<p class="text-slate-400 italic text-center py-4">Belum ada Master Data SKU diunggah.</p>`;
             }
         }
 
-        // HANDLE FILE PO UPLOAD
+        // ================= DATA PO =================
+        function loadPODataFromStorage() {
+            const saved = localStorage.getItem('PO_DATA');
+            if (saved) {
+                try { poData = JSON.parse(saved) || []; } catch (e) { poData = []; }
+            }
+        }
+
+        function savePODataToStorage() {
+            safeSet('PO_DATA', JSON.stringify(poData));
+        }
+
         function handleFileUploadPO(e) {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(event) {
                 const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
+                const workbook = XLSX.read(data, { type: 'array' });
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                const json = XLSX.utils.sheet_to_json(sheet, {defval: ''});
-
+                const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
                 processPOJson(json);
+                e.target.value = '';
             };
             reader.readAsArrayBuffer(file);
         }
@@ -617,7 +803,6 @@
                 let qty = row['Qty'] || row['Jumlah'] || row['QTY'] || 1;
                 let harga = row['Harga'] || row['Price'] || '';
                 let variasi = row['Variasi'] || row['Variant'] || '';
-
                 return {
                     nama: String(nama).trim(),
                     kode: String(kode).trim(),
@@ -626,28 +811,26 @@
                     variasi: variasi
                 };
             });
-
             applyVLookupToPO();
             switchTab('data-po');
         }
 
-        // VLOOKUP AUTOMATION
+        // ================= VLOOKUP AUTOMATION =================
         function applyVLookupToPO() {
             if (poData.length === 0) return;
+            let matchedCount = 0;
 
             poData = poData.map(po => {
                 let matched = null;
-
                 if (po.kode && masterSKUData.length > 0) {
                     matched = masterSKUData.find(m => m.barcode === po.kode);
                 }
-
                 if (!matched && po.nama && masterSKUData.length > 0) {
                     const cleanPOName = cleanText(po.nama);
                     matched = masterSKUData.find(m => cleanText(m.nama) === cleanPOName);
                 }
-
                 if (matched) {
+                    matchedCount++;
                     return {
                         ...po,
                         kode: po.kode || matched.barcode,
@@ -661,6 +844,7 @@
 
             updatePODataUI();
             renderAllPages();
+            if (matchedCount > 0) showToast(`🪄 VLOOKUP: ${matchedCount} dari ${poData.length} item cocok dengan Master SKU`);
         }
 
         function updatePODataUI() {
@@ -670,38 +854,38 @@
             const prefix = document.getElementById('prefixCode')?.value || '2000';
 
             totalEl.innerText = poData.length;
+            savePODataToStorage();
+
             if (poData.length > 0) {
                 badgeEl.innerText = poData.length;
                 badgeEl.classList.remove('hidden');
-
                 listEl.innerHTML = poData.map((item, idx) => {
-                    const isInternal = item.kode && item.kode.startsWith(prefix);
-                    const statusBadge = isInternal 
-                        ? `<span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold">🟡 Stiker Toko (${prefix})</span>`
+                    const isInternal = item.kode && String(item.kode).startsWith(prefix);
+                    const statusBadge = isInternal
+                        ? `<span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold">🟡 Stiker Toko (${esc(prefix)})</span>`
                         : `<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">🟢 Barcode Pabrik • Di-skip</span>`;
-
                     return `
                         <div class="bg-slate-50 border p-2.5 rounded-lg space-y-2 relative">
                             <div class="flex justify-between items-center">
-                                <span class="font-bold text-slate-700">Item #${idx+1} ${statusBadge}</span>
+                                <span class="font-bold text-slate-700">Item #${idx + 1} ${statusBadge}</span>
                                 <button onclick="removePOItem(${idx})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <span class="text-[10px] text-slate-500">Nama Barang</span>
-                                    <input type="text" value="${item.nama}" onchange="updatePOItem(${idx}, 'nama', this.value)" class="w-full border p-1 rounded text-xs">
+                                    <input type="text" value="${esc(item.nama)}" onchange="updatePOItem(${idx}, 'nama', this.value)" class="w-full border p-1 rounded text-xs">
                                 </div>
                                 <div>
                                     <span class="text-[10px] text-slate-500">Variasi</span>
-                                    <input type="text" value="${item.variasi || ''}" onchange="updatePOItem(${idx}, 'variasi', this.value)" class="w-full border p-1 rounded text-xs">
+                                    <input type="text" value="${esc(item.variasi || '')}" onchange="updatePOItem(${idx}, 'variasi', this.value)" class="w-full border p-1 rounded text-xs">
                                 </div>
                                 <div>
                                     <span class="text-[10px] text-slate-500 font-bold text-blue-600">Kode / Barcode</span>
-                                    <input type="text" value="${item.kode}" onchange="updatePOItem(${idx}, 'kode', this.value)" class="w-full border p-1 rounded text-xs font-mono font-bold bg-white">
+                                    <input type="text" value="${esc(item.kode)}" onchange="updatePOItem(${idx}, 'kode', this.value)" class="w-full border p-1 rounded text-xs font-mono font-bold bg-white">
                                 </div>
                                 <div>
                                     <span class="text-[10px] text-slate-500">Harga</span>
-                                    <input type="text" value="${item.harga || ''}" onchange="updatePOItem(${idx}, 'harga', this.value)" class="w-full border p-1 rounded text-xs">
+                                    <input type="text" value="${esc(item.harga || '')}" onchange="updatePOItem(${idx}, 'harga', this.value)" class="w-full border p-1 rounded text-xs">
                                 </div>
                                 <div class="col-span-2">
                                     <span class="text-[10px] text-slate-500">Qty (Jumlah Cetak Stiker)</span>
@@ -738,53 +922,93 @@
         function clearPOData() {
             if (confirm('Hapus seluruh data PO?')) {
                 poData = [];
+                currentPage = 1;
                 updatePODataUI();
                 renderAllPages();
             }
         }
 
-        // GENERATE FILTERED STICKER LIST
+        // ================= FILTER STIKER =================
         function getFilteredStickers() {
             const filterMode = document.getElementById('filterMode')?.value || 'internal_only';
             const prefix = document.getElementById('prefixCode')?.value || '2000';
-            
             let list = [];
             poData.forEach(item => {
-                const isInternal = item.kode && item.kode.startsWith(prefix);
-                
+                const isInternal = item.kode && String(item.kode).startsWith(prefix);
                 let include = false;
                 if (filterMode === 'all') include = true;
                 else if (filterMode === 'internal_only' && isInternal) include = true;
                 else if (filterMode === 'pabrik_only' && !isInternal) include = true;
-
                 if (include) {
-                    for (let i = 0; i < item.qty; i++) {
-                        list.push(item);
-                    }
+                    for (let i = 0; i < item.qty; i++) list.push(item);
                 }
             });
             return list;
         }
 
-        // RENDER PAGES & PREVIEW
+        // ================= RENDER PAGES =================
+        function drawBarcode(svgEl, code, format, height) {
+            if (!svgEl) return;
+            const render = (fmt) => JsBarcode(svgEl, code, {
+                format: fmt, height: height, width: 0.95,
+                displayValue: true, fontSize: 8, margin: 0
+            });
+            try {
+                render(format);
+            } catch (e) {
+                // EAN-13 invalid (bukan 13 digit / checksum salah) → fallback CODE128
+                try { render('CODE128'); } catch (e2) { return; }
+            }
+            // Buat barcode fluid-fit dalam sel (tidak pernah overflow)
+            try {
+                const w = svgEl.getAttribute('width'), h = svgEl.getAttribute('height');
+                if (w && h) {
+                    svgEl.setAttribute('viewBox', `0 0 ${w} ${h}`);
+                    svgEl.removeAttribute('width');
+                    svgEl.removeAttribute('height');
+                    svgEl.style.width = '100%';
+                    svgEl.style.maxHeight = height + 'px';
+                }
+            } catch (e) { }
+        }
+
         function renderAllPages() {
             const container = document.getElementById('pagesRenderArea');
             container.innerHTML = '';
+            pageElements = [];
 
             const stickers = getFilteredStickers();
-
             const cols = parseInt(document.getElementById('gridCols').value) || 6;
             const rows = parseInt(document.getElementById('gridRows').value) || 14;
+            const sw = parseFloat(document.getElementById('stickerW').value) || 0;
+            const sh = parseFloat(document.getElementById('stickerH').value) || 0;
             const itemsPerPage = cols * rows;
 
-            const totalPages = Math.max(1, Math.ceil(stickers.length / itemsPerPage));
+            const totalPages = Math.max(1, Math.ceil(stickers.length / itemsPerPage) || 1);
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
             document.getElementById('pageIndicator').innerText = `Halaman ${currentPage} dari ${totalPages}`;
             document.getElementById('currentPageNum').innerText = currentPage;
+            document.getElementById('gridInfoText').innerText = `Pratinjau Kertas A4 (${cols} Kolom × ${rows} Baris = ${itemsPerPage} Stiker)`;
 
-            const mt = document.getElementById('marginTop').value + 'mm';
-            const mb = document.getElementById('marginBottom').value + 'mm';
-            const ml = document.getElementById('marginLeft').value + 'mm';
-            const mr = document.getElementById('marginRight').value + 'mm';
+            // Banner peringatan jika tidak ada stiker lolos filter
+            if (stickers.length === 0) {
+                const filterMode = document.getElementById('filterMode')?.value || 'internal_only';
+                const labels = { internal_only: 'Hanya Barcode Internal', pabrik_only: 'Hanya Barcode Pabrik', all: 'Semua Item' };
+                const msg = poData.length === 0
+                    ? '⚠️ Belum ada data PO — upload Excel, Live Sync Sheets, atau tambah manual di tab "Data PO".'
+                    : `⚠️ Tidak ada item yang lolos filter "<b>${labels[filterMode]}</b>". Cek tab <b>Desain → Opsi Filter</b> atau kolom Kode barang Anda.`;
+                container.innerHTML = `<div class="no-print w-[210mm] bg-amber-100 border border-amber-300 text-amber-800 text-xs p-3 rounded-lg mb-4">${msg}</div>`;
+            }
+
+            // Ambil semua setting
+            const offX = parseFloat(document.getElementById('offsetX')?.value) || 0;
+            const offY = parseFloat(document.getElementById('offsetY')?.value) || 0;
+            const mtN = parseFloat(document.getElementById('marginTop').value) || 0;
+            const mrN = parseFloat(document.getElementById('marginRight').value) || 0;
+            const mbN = parseFloat(document.getElementById('marginBottom').value) || 0;
+            const mlN = parseFloat(document.getElementById('marginLeft').value) || 0;
             const gx = document.getElementById('gapX').value + 'mm';
             const gy = document.getElementById('gapY').value + 'mm';
             const showBorders = document.getElementById('showBorders').checked;
@@ -792,67 +1016,79 @@
             const enableCode = document.getElementById('enableCode')?.checked;
             const showPrice = document.getElementById('showPrice')?.checked;
             const fontSize = document.getElementById('fontSizeSelect')?.value || '8px';
+            const codeFormat = document.getElementById('codeType')?.value || 'CODE128';
 
-            const pageIndex = currentPage - 1;
-            const pageStickers = stickers.slice(pageIndex * itemsPerPage, (pageIndex + 1) * itemsPerPage);
+            // Tinggi barcode menyesuaikan tinggi stiker fisik
+            let barcodeHeight = rows > 12 ? 15 : 22;
+            if (sh > 0) barcodeHeight = Math.max(8, Math.min(barcodeHeight, Math.round(sh * 0.6)));
 
-            const pageEl = document.createElement('div');
-            pageEl.className = `a4-page print-page ${showBorders ? 'border-dashed-grid' : ''}`;
-            pageEl.style.padding = `${mt} ${mr} ${mb} ${ml}`;
+            // ==== Render SEMUA halaman (yang non-aktif tersembunyi di layar, semua tercetak) ====
+            for (let p = 0; p < totalPages; p++) {
+                const pageEl = document.createElement('div');
+                pageEl.className = `a4-page print-page ${showBorders ? 'border-dashed-grid' : ''}`;
+                if (p === currentPage - 1) pageEl.classList.add('active');
+                // Offset diaplikasikan via padding (bukan center) agar fine-tune akurat
+                pageEl.style.padding = `${mtN + offY}mm ${mrN - offX}mm ${mbN}mm ${mlN + offX}mm`;
 
-            const gridEl = document.createElement('div');
-            gridEl.className = 'sticker-grid';
-            gridEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-            gridEl.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-            gridEl.style.gap = `${gy} ${gx}`;
+                const gridEl = document.createElement('div');
+                gridEl.className = 'sticker-grid';
+                gridEl.style.gap = `${gy} ${gx}`;
 
-            const isDense = rows > 12;
-            const barcodeHeight = isDense ? 15 : 22;
-
-            for (let i = 0; i < itemsPerPage; i++) {
-                const item = pageStickers[i];
-                const itemEl = document.createElement('div');
-                itemEl.className = 'sticker-item';
-
-                if (item) {
-                    let html = `<div style="font-size: ${fontSize};" class="w-full text-center leading-tight">`;
-                    if (headerText) html += `<div class="font-bold uppercase text-[7px] text-slate-500">${headerText}</div>`;
-                    html += `<div class="font-bold truncate uppercase" title="${item.nama}">${item.nama}</div>`;
-                    if (item.variasi) html += `<div class="text-[7px] text-slate-600">${item.variasi}</div>`;
-                    html += `</div>`;
-
-                    if (enableCode && item.kode) {
-                        const codeId = `code-${pageIndex}-${i}`;
-                        html += `<div class="my-0.5 flex justify-center items-center overflow-hidden w-full"><svg id="${codeId}" class="barcode-img"></svg></div>`;
-                        setTimeout(() => {
-                            try {
-                                JsBarcode(`#${codeId}`, item.kode, {
-                                    format: "CODE128",
-                                    height: barcodeHeight,
-                                    width: 0.95,
-                                    displayValue: true,
-                                    fontSize: 8,
-                                    margin: 0
-                                });
-                            } catch(e) {}
-                        }, 10);
-                    } else {
-                        html += `<div class="font-mono text-[8px] font-bold tracking-tight my-0.5">${item.kode || ''}</div>`;
-                    }
-
-                    if (showPrice && item.harga) {
-                        html += `<div class="font-bold text-[7px] border-t w-full text-center pt-0.5">Rp ${Number(item.harga).toLocaleString('id-ID')}</div>`;
-                    }
-
-                    itemEl.innerHTML = html;
+                if (sw > 0 && sh > 0) {
+                    // MODE PRESISI: ukuran sel = ukuran stiker fisik (mm)
+                    gridEl.style.gridTemplateColumns = `repeat(${cols}, ${sw}mm)`;
+                    gridEl.style.gridTemplateRows = `repeat(${rows}, ${sh}mm)`;
+                    gridEl.style.justifyContent = 'start';
+                    gridEl.style.alignContent = 'start';
                 } else {
-                    itemEl.innerHTML = `<span class="text-[8px] text-slate-200 no-print select-none">KOSONG</span>`;
+                    // MODE FLEKSIBEL (fallback)
+                    gridEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+                    gridEl.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
                 }
-                gridEl.appendChild(itemEl);
-            }
 
-            pageEl.appendChild(gridEl);
-            container.appendChild(pageEl);
+                const pageStickers = stickers.slice(p * itemsPerPage, (p + 1) * itemsPerPage);
+                const barcodeTasks = [];
+
+                for (let i = 0; i < itemsPerPage; i++) {
+                    const item = pageStickers[i];
+                    const cell = document.createElement('div');
+                    cell.className = 'sticker-item';
+
+                    if (item) {
+                        const codeStr = String(item.kode || '').trim();
+                        let html = `<div style="font-size:${fontSize};" class="w-full text-center leading-tight min-w-0">`;
+                        if (headerText) html += `<div class="font-bold uppercase text-[7px] text-slate-500 truncate">${esc(headerText)}</div>`;
+                        html += `<div class="font-bold truncate uppercase" title="${esc(item.nama)}">${esc(item.nama)}</div>`;
+                        if (item.variasi) html += `<div class="text-[7px] text-slate-600 truncate">${esc(item.variasi)}</div>`;
+                        html += `</div>`;
+
+                        if (enableCode && codeStr) {
+                            const codeId = `code-${p}-${i}`;
+                            html += `<div class="my-0.5 flex justify-center items-center overflow-hidden w-full"><svg id="${codeId}" class="barcode-img"></svg></div>`;
+                            barcodeTasks.push({ id: codeId, code: codeStr });
+                        } else {
+                            html += `<div class="font-mono text-[8px] font-bold tracking-tight my-0.5 truncate w-full text-center">${esc(codeStr)}</div>`;
+                        }
+
+                        if (showPrice && item.harga !== '' && item.harga != null) {
+                            html += `<div class="font-bold text-[7px] border-t w-full text-center pt-0.5 truncate">${formatHarga(item.harga)}</div>`;
+                        }
+                        cell.innerHTML = html;
+                    } else {
+                        cell.innerHTML = `<span class="text-[8px] text-slate-200 no-print select-none">KOSONG</span>`;
+                    }
+                    gridEl.appendChild(cell);
+                }
+
+                pageEl.appendChild(gridEl);
+                container.appendChild(pageEl);
+                pageElements.push(pageEl);
+
+                // Generate barcode SETELAH halaman masuk DOM (sinkron, tanpa setTimeout)
+                barcodeTasks.forEach(t => {
+                    drawBarcode(document.getElementById(t.id), t.code, codeFormat, barcodeHeight);
+                });
+            }
         }
 
         function changePage(delta) {
@@ -860,21 +1096,24 @@
             const cols = parseInt(document.getElementById('gridCols').value) || 6;
             const rows = parseInt(document.getElementById('gridRows').value) || 14;
             const itemsPerPage = cols * rows;
-            const totalPages = Math.max(1, Math.ceil(stickers.length / itemsPerPage));
+            const totalPages = Math.max(1, Math.ceil(stickers.length / itemsPerPage) || 1);
 
             currentPage += delta;
             if (currentPage < 1) currentPage = 1;
             if (currentPage > totalPages) currentPage = totalPages;
 
-            renderAllPages();
+            // Toggle class saja — tidak perlu re-render (barcode sudah ter-generate)
+            pageElements.forEach((el, i) => el.classList.toggle('active', i === currentPage - 1));
+            document.getElementById('pageIndicator').innerText = `Halaman ${currentPage} dari ${totalPages}`;
+            document.getElementById('currentPageNum').innerText = currentPage;
         }
 
-        // DOWNLOAD SAMPLE EXCEL PO
+        // ================= CONTOH EXCEL =================
         function downloadSamplePO() {
             const sample = [
-                { "Nama Barang": "ACE MAX 350 ML", "Qty": 4 },
-                { "Nama Barang": "AIR ZAM-ZAM 1 LITER", "Qty": 2 },
-                { "Nama Barang": "AL MAHYRA 100 ML", "Qty": 5 }
+                { "Nama Barang": "ACE MAX 350 ML", "Kode": "200000000001", "Qty": 4, "Harga": 15000, "Variasi": "" },
+                { "Nama Barang": "AIR ZAM-ZAM 1 LITER", "Kode": "200000000002", "Qty": 2, "Harga": 22000, "Variasi": "" },
+                { "Nama Barang": "AL MAHYRA 100 ML", "Kode": "8998009090011", "Qty": 5, "Harga": 9500, "Variasi": "Classic" }
             ];
             const ws = XLSX.utils.json_to_sheet(sample);
             const wb = XLSX.utils.book_new();
@@ -882,37 +1121,73 @@
             XLSX.writeFile(wb, "Contoh_Excel_PO.xlsx");
         }
 
-        // LIVE SYNC GOOGLE SHEETS
-        function syncFromGoogleSheets() {
+        // ================= LIVE SYNC GOOGLE SHEETS =================
+        function syncFromGoogleSheets(manual = true) {
             const url = document.getElementById('sheetsUrl').value.trim();
-            if (!url) return alert('Masukkan URL CSV Google Sheets!');
-
+            if (!url) {
+                if (manual) alert('Masukkan URL CSV Google Sheets!');
+                return;
+            }
             fetch(url)
                 .then(res => res.text())
                 .then(csvText => {
-                    const workbook = XLSX.read(csvText, {type: 'string'});
+                    const workbook = XLSX.read(csvText, { type: 'string' });
                     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const json = XLSX.utils.sheet_to_json(sheet, {defval: ''});
+                    const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
                     processPOJson(json);
-                    alert('Berhasil sinkronisasi dari Google Sheets!');
+                    // Manual = alert + toast, Auto-sync = toast saja (tidak mengganggu)
+                    if (manual) alert(`Berhasil sinkronisasi ${json.length} item dari Google Sheets!`);
+                    else showToast(`🔄 Auto-sync: ${json.length} item diperbarui`);
                 })
                 .catch(err => {
-                    alert('Gagal mengambil data dari Google Sheets. Pastikan link dipublikasikan sebagai CSV.');
+                    if (manual) alert('Gagal mengambil data dari Google Sheets. Pastikan link dipublikasikan sebagai CSV.\n\n' + err.message);
+                    else showToast('Auto-sync gagal: ' + err.message, true);
                 });
         }
 
         function toggleAutoSync() {
-            const isChecked = document.getElementById('autoSyncCheck').checked;
-            const timerBox = document.getElementById('autoSyncTimerBox');
+            const on = document.getElementById('autoSyncCheck').checked;
+            document.getElementById('autoSyncTimerBox').classList.toggle('hidden', !on);
+            clearInterval(autoSyncTimer);
+            if (on) startAutoSync();
+        }
 
-            if (isChecked) {
-                timerBox.classList.remove('hidden');
-                const intervalSec = parseInt(document.getElementById('syncInterval').value) || 30;
-                autoSyncTimer = setInterval(syncFromGoogleSheets, intervalSec * 1000);
-            } else {
-                timerBox.classList.add('hidden');
-                clearInterval(autoSyncTimer);
-            }
+        function startAutoSync() {
+            const sec = Math.max(10, parseInt(document.getElementById('syncInterval').value) || 30);
+            autoSyncTimer = setInterval(() => syncFromGoogleSheets(false), sec * 1000);
+        }
+
+        function restartAutoSync() {
+            clearInterval(autoSyncTimer);
+            if (document.getElementById('autoSyncCheck').checked) startAutoSync();
+        }
+
+        // ================= KALIBRASI PRINTER =================
+        function printCalibration() {
+            const w = window.open('', '_blank', 'width=800,height=900');
+            w.document.write(`<!DOCTYPE html><html><head><style>
+                @page { size: A4; margin: 0; }
+                body { margin: 0; font-family: sans-serif; }
+                .kotak { position:absolute; top:10mm; left:10mm; width:100mm; height:100mm; border:1mm solid black; }
+                .garis { position:absolute; }
+                .g-atas { top:0; left:10mm; width:190mm; border-top:0.5mm solid red; }
+                .g-bawah { bottom:0; left:10mm; width:190mm; border-top:0.5mm solid red; }
+                .g-kiri { left:0; top:10mm; height:277mm; border-left:0.5mm solid red; }
+                .g-kanan { right:0; top:10mm; height:277mm; border-left:0.5mm solid red; }
+                .info { position:absolute; top:118mm; left:10mm; font-size:12px; line-height:1.7; }
+            </style></head><body>
+                <div class="kotak"></div>
+                <div class="garis g-atas"></div><div class="garis g-bawah"></div>
+                <div class="garis g-kiri"></div><div class="garis g-kanan"></div>
+                <div class="info">
+                    ✅ Ukur kotak hitam dengan penggaris → harus tepat <b>100 × 100 mm</b>.<br>
+                    ❌ Lebih kecil/besar → Scale di dialog print / driver BUKAN 100%<br>
+                    ❌ Garis merah terpotong → printer tidak bisa full-bleed (area fisik printer)
+                </div>
+            </body></html>`);
+            w.document.close();
+            w.focus();
+            w.print();
         }
     </script>
 </body>
