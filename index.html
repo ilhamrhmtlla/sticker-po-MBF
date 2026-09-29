@@ -23,21 +23,37 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
-        /* Layout Print Setup */
+        /* Layout Print Setup - PERBAIKAN SCROLLBAR PRINT */
         @media print {
-            body {
+            html, body {
                 background: white !important;
                 padding: 0 !important;
                 margin: 0 !important;
+                overflow: hidden !important;
+                width: 210mm !important;
+                height: 297mm !important;
             }
             .no-print {
                 display: none !important;
             }
-            .print-page {
+            .preview-container {
+                padding: 0 !important;
+                margin: 0 !important;
+                background: white !important;
+                overflow: hidden !important;
+                max-height: none !important;
+            }
+            .a4-page {
                 box-shadow: none !important;
                 margin: 0 !important;
+                padding-bottom: 0 !important;
                 page-break-after: always;
                 page-break-inside: avoid;
+                overflow: hidden !important;
+            }
+            /* Garis bantu disembunyikan saat dicetak */
+            .border-dashed-grid .sticker-item {
+                border: none !important;
             }
         }
 
@@ -72,7 +88,7 @@
             flex-direction: column;
             justify-content: space-between;
             align-items: center;
-            padding: 1mm 1mm;
+            padding: 0.8mm 1mm;
             overflow: hidden;
             position: relative;
             background: white;
@@ -99,7 +115,7 @@
             </div>
             <div>
                 <h1 class="font-bold text-lg leading-tight">Cetak Stiker Label PO</h1>
-                <p class="text-xs text-slate-400">Generator Label 84 Stiker (6 Kolom x 14 Baris) + Auto Match SKU</p>
+                <p class="text-xs text-slate-400">Generator Label 84 Stiker (6x14) + Auto Match SKU</p>
             </div>
         </div>
 
@@ -181,11 +197,11 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <span class="text-slate-500">Margin Atas</span>
-                                <input type="number" id="marginTop" value="6" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginTop" value="5" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Margin Bawah</span>
-                                <input type="number" id="marginBottom" value="6" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginBottom" value="5" step="0.5" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Margin Kiri</span>
@@ -215,7 +231,7 @@
                     <div class="border-t pt-3">
                         <label class="flex items-center space-x-2 cursor-pointer">
                             <input type="checkbox" id="showBorders" checked onchange="renderAllPages()" class="rounded text-blue-600">
-                            <span class="font-medium text-slate-700">Tampilkan Garis Bantu Stiker</span>
+                            <span class="font-medium text-slate-700">Tampilkan Garis Bantu Stiker (Layar Saja)</span>
                         </label>
                     </div>
                 </div>
@@ -443,8 +459,8 @@
             if (preset === 'gla84_6x14') {
                 document.getElementById('gridCols').value = 6;
                 document.getElementById('gridRows').value = 14;
-                document.getElementById('marginTop').value = 6;
-                document.getElementById('marginBottom').value = 6;
+                document.getElementById('marginTop').value = 5;
+                document.getElementById('marginBottom').value = 5;
                 document.getElementById('marginLeft').value = 4;
                 document.getElementById('marginRight').value = 4;
                 document.getElementById('gapX').value = 1;
@@ -791,7 +807,7 @@
             gridEl.style.gap = `${gy} ${gx}`;
 
             const isDense = rows > 12;
-            const barcodeHeight = isDense ? 16 : 22;
+            const barcodeHeight = isDense ? 15 : 22;
 
             for (let i = 0; i < itemsPerPage; i++) {
                 const item = pageStickers[i];
@@ -813,7 +829,7 @@
                                 JsBarcode(`#${codeId}`, item.kode, {
                                     format: "CODE128",
                                     height: barcodeHeight,
-                                    width: 1.0,
+                                    width: 0.95,
                                     displayValue: true,
                                     fontSize: 8,
                                     margin: 0
