@@ -69,6 +69,50 @@
             max-width: 100%;
         }
 
+        /* ============ SMART FIT: NAMA BARANG TAMPIL PENUH ============ */
+        /* Nama boleh turun beberapa baris; ukuran font dihitung otomatis oleh
+           mesin Smart FIT (fitNameText) agar muat penuh di dalam stiker.
+           -webkit-line-clamp di-set inline per stiker sesuai hasil perhitungan. */
+        .sticker-name {
+            font-weight: 700;
+            text-transform: uppercase;
+            text-align: center;
+            width: 100%;
+            min-width: 0;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+
+        /* ============ PANEL LAPORAN SMART FIT (LAYAR SAJA) ============ */
+        .fit-report {
+            width: 210mm;
+            border-radius: 10px;
+            border: 1px solid #a7f3d0;
+            background: #ecfdf5;
+            padding: 12px 16px;
+            font-size: 12px;
+            color: #064e3b;
+            box-shadow: 0 4px 10px -4px rgba(0,0,0,0.15);
+        }
+        .fit-report.fail {
+            border-color: #fecaca;
+            background: #fef2f2;
+            color: #7f1d1d;
+        }
+        .fit-report .fit-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 2.5px 0;
+            border-bottom: 1px dashed rgba(0,0,0,0.08);
+        }
+        .fit-report .fit-row:last-child { border-bottom: none; }
+        .fit-report b.ok { color: #047857; }
+        .fit-report b.bad { color: #b91c1c; }
+
         /* ============ PRINT ============ */
         @media print {
             html, body {
@@ -129,11 +173,14 @@
             </div>
             <div>
                 <h1 class="font-bold text-lg leading-tight">Cetak Stiker Label PO</h1>
-                <p class="text-xs text-slate-400">GL-A44 (6×14 · 32×18mm) + Import Template Resmi .docx + Auto Match SKU</p>
+                <p class="text-xs text-slate-400">GL-A44 (6×14 · 32×19mm Terkalibrasi) + Smart FIT Anti-Terpotong + Import Template Resmi .docx</p>
             </div>
         </div>
 
         <div class="flex items-center space-x-2">
+            <button onclick="smartFit()" class="bg-emerald-500 hover:bg-emerald-400 text-white text-xs px-3 py-2 rounded-md transition flex items-center gap-1.5 font-bold shadow ring-1 ring-emerald-300">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Smart FIT
+            </button>
             <button onclick="downloadSamplePO()" class="bg-slate-700 hover:bg-slate-600 text-xs px-3 py-2 rounded-md transition flex items-center gap-1.5">
                 <i class="fa-solid fa-file-excel text-green-400"></i> Contoh Excel
             </button>
@@ -194,7 +241,7 @@
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
                         <label class="block font-bold text-slate-700 mb-1">Preset Label</label>
                         <select id="presetSelect" onchange="applyPreset()" class="w-full border border-slate-300 rounded p-2 bg-white text-xs font-bold text-blue-900">
-                            <option value="gla84_6x14" selected>⭐ GL-A44 Ukur Fisik (6×14, 32×18mm) — Direkomendasikan</option>
+                            <option value="gla84_6x14" selected>⭐ GL-A44 Kalibrasi (6×14, 32×19mm) — Hasil Kalibrasi Printer</option>
                             <option value="gla84">Layout 84 Stiker (4 Kolom × 21 Baris)</option>
                             <option value="gla44">Layout 44 Stiker (4 Kolom × 11 Baris)</option>
                             <option value="tomjerry103">Tom & Jerry No. 103 (12 Stiker)</option>
@@ -230,14 +277,17 @@
                             </div>
                             <div>
                                 <span class="text-slate-500">Tinggi Stiker</span>
-                                <input type="number" id="stickerH" value="18" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded font-bold">
+                                <input type="number" id="stickerH" value="19" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded font-bold">
                             </div>
                         </div>
                         <button onclick="autoFitMargins()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded font-bold text-[11px]">
                             <i class="fa-solid fa-crosshairs mr-1"></i> Auto Hitung Margin (Center di Kertas)
                         </button>
+                        <button onclick="smartFit()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded font-bold text-[11px] shadow">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> 🪄 Smart FIT — Cek Muat A4 + Nama Tidak Terpotong
+                        </button>
                         <p class="text-[10px] text-amber-600 leading-tight">
-                            ⚠️ Untuk preset GL-A44 Ukur Fisik: JANGAN klik tombol ini — lembar Anda tidak simetris (atas 2mm, bawah 17mm). Margin sudah di-set manual.
+                            ⚠️ Preset GL-A44 Kalibrasi (atas 3mm · bawah 2mm · kiri/kanan 4mm · stiker 32×19mm · gap 2mm): JANGAN klik "Auto Hitung Margin" — margin sudah hasil kalibrasi fisik dan tidak simetris penuh. Gunakan <b>Smart FIT</b> untuk validasi.
                         </p>
                     </div>
 
@@ -246,11 +296,11 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <span class="text-slate-500">Margin Atas</span>
-                                <input type="number" id="marginTop" value="2" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginTop" value="3" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Margin Bawah</span>
-                                <input type="number" id="marginBottom" value="17" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
+                                <input type="number" id="marginBottom" value="2" step="0.1" onchange="renderAllPages()" class="w-full border p-1 rounded">
                             </div>
                             <div>
                                 <span class="text-slate-500">Margin Kiri</span>
@@ -474,6 +524,8 @@
                 </div>
             </div>
 
+            <div id="fitReport" class="no-print fit-report hidden" style="margin-bottom:16px;"></div>
+
             <div id="pagesRenderArea" class="flex flex-col items-center space-y-8">
                 <!-- Pages render here -->
             </div>
@@ -495,11 +547,26 @@
 
         const TWIPS_PER_MM = 56.6929;
 
+        // ===== SMART FIT ENGINE CONSTANTS =====
+        const PX_PER_MM = 96 / 25.4;          // 3.7795 px per mm (CSS)
+        const STICKER_PAD_V_MM = 0.5;         // padding atas+bawah .sticker-item (0.5mm x2)
+        const STICKER_PAD_H_MM = 1;           // padding kiri+kanan (1mm x2)
+        const NAME_MIN_FONT = 6;              // font nama terkecil sebelum mode darurat
+        const NAME_MAX_LINES = 3;             // maksimum baris nama di stiker kecil
+        const BARCODE_MIN_H = 9;              // tinggi barcode minimum (px) agar tetap terbaca scanner
+        const BARCODE_MAX_H = 24;
+
+        // Konteks canvas khusus pengukuran lebar teks nama (akurat per-piksel)
+        const fitCanvas = document.createElement('canvas');
+        const fitCtx = fitCanvas.getContext('2d');
+
         // ================= INIT =================
         window.onload = function() {
             loadMasterDataFromStorage();
             loadPODataFromStorage();
-            applyPreset();
+            const hasSaved = loadLabelSettings();
+            if (!hasSaved) applyPreset(); else renderAllPages();
+            bindAutoSaveSettings();
         };
 
         // ================= HELPERS =================
@@ -567,10 +634,11 @@
         function applyPreset() {
             const preset = document.getElementById('presetSelect').value;
             const presets = {
-                // ⭐ GL-A44 hasil pengukuran lembar fisik user:
-                // 6×14, stiker 32×18mm, gap 2mm, margin atas 2mm / kiri 4mm.
-                // TIDAK simetris (bawah sisa 17mm) → margin di-set MANUAL, bukan auto-center!
-                gla84_6x14: { cols: 6, rows: 14, sw: 32,   sh: 18,   gx: 2,   gy: 2,   mt: 2,  mb: 17, ml: 4, mr: 4, fs: '8px' },
+                // ⭐ GL-A44 HASIL KALIBRASI PRINTER USER (dicetak & diukur fisik):
+                // 6×14, stiker 32×19mm, gap 2mm, margin atas 3 / bawah 2 / kiri 4 / kanan 4mm.
+                // Verifikasi A4: lebar 4+192+10+4=210 ✓ · tinggi 3+266+26+2=297 ✓ → pas sempurna.
+                // Tidak simetris penuh (atas 3, bawah 2) → margin MANUAL, JANGAN auto-center!
+                gla84_6x14: { cols: 6, rows: 14, sw: 32,   sh: 19,   gx: 2,   gy: 2,   mt: 3,  mb: 2, ml: 4, mr: 4, fs: '8px' },
                 gla84:      { cols: 4, rows: 21, sw: 49.8, sh: 13.4, gx: 1,   gy: 0.5, fs: '8px' },
                 gla44:      { cols: 4, rows: 11, sw: 45.7, sh: 21.2, gx: 2.5, gy: 3.5, fs: '9px' },
                 tomjerry103:{ cols: 3, rows: 4,  sw: 60,   sh: 45,   gx: 5,   gy: 5,   fs: '10px' }
@@ -597,6 +665,7 @@
                 // Preset estimasi lain → center otomatis
                 autoFitMargins();
             }
+            saveLabelSettings();
         }
 
         function autoFitMargins() {
@@ -624,6 +693,306 @@
             document.getElementById('marginTop').value = mt;
             document.getElementById('marginBottom').value = mt;
             renderAllPages();
+        }
+
+        // ================================================================
+        // ================ SMART FIT ENGINE (ANTI-TERPOTONG) =============
+        // ================================================================
+        // Ide utama: setiap stiker punya "budget ruang vertikal" = tinggi
+        // stiker fisik - padding. Budget itu dibagi ke: header, nama barang,
+        // variasi, barcode, angka kode, dan harga. Ukuran font nama dihitung
+        // dengan pengukuran canvas (akurat per-piksel) sehingga nama SELALU
+        // tampil penuh (max 3 baris, font mengecil otomatis sampai 6px),
+        // dan tinggi barcode menyesuaikan sisa ruang.
+
+        // Ukur teks uppercase bold: berapa baris & total tingginya pada font-size fs
+        function measureName(text, fs, maxW) {
+            fitCtx.font = `bold ${fs}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
+            const words = String(text).toUpperCase().split(/\s+/).filter(Boolean);
+            let lines = 1, cur = '';
+            for (const w of words) {
+                const test = cur ? cur + ' ' + w : w;
+                if (fitCtx.measureText(test).width <= maxW) {
+                    cur = test;
+                } else {
+                    if (cur) lines++;
+                    cur = w;
+                    // kata tunggal lebih lebar dari kolom → pecah paksa per karakter
+                    while (fitCtx.measureText(cur).width > maxW && cur.length > 1) {
+                        // potong: sisanya jadi baris baru
+                        let cut = cur.length;
+                        while (cut > 1 && fitCtx.measureText(cur.slice(0, cut)).width > maxW) cut--;
+                        lines++;
+                        cur = cur.slice(cut);
+                    }
+                }
+            }
+            return { lines, height: lines * fs * 1.15 };
+        }
+
+        // Cari font-size terbesar sehingga nama muat dalam maxH & maxLines
+        function fitNameText(text, maxW, maxH, startSize, minSize, maxLines) {
+            const t = String(text || '').trim() || ' ';
+            for (let fs = startSize; fs >= minSize; fs -= 0.5) {
+                const m = measureName(t, fs, maxW);
+                if (m.lines <= maxLines && m.height <= maxH) {
+                    return { fs, lines: m.lines, height: m.height, fits: true };
+                }
+            }
+            // Darurat: paksa kecil — kembalikan ukuran minimum (dengan clamp ellipsis)
+            const m = measureName(t, minSize, maxW);
+            return { fs: minSize, lines: m.lines, height: Math.min(m.height, maxH), fits: m.lines <= maxLines && m.height <= maxH };
+        }
+
+        // Ambil seluruh setting kertas & desain dalam satu objek
+        function readLayoutSettings() {
+            const val = (id, d) => {
+                const el = document.getElementById(id);
+                if (!el) return d;
+                const v = el.type === 'checkbox' ? el.checked : el.value;
+                return v === undefined || v === '' ? d : v;
+            };
+            return {
+                cols: parseInt(val('gridCols', 6)) || 6,
+                rows: parseInt(val('gridRows', 14)) || 14,
+                sw: parseFloat(val('stickerW', 32)) || 32,
+                sh: parseFloat(val('stickerH', 18)) || 18,
+                mt: parseFloat(val('marginTop', 0)) || 0,
+                mb: parseFloat(val('marginBottom', 0)) || 0,
+                ml: parseFloat(val('marginLeft', 0)) || 0,
+                mr: parseFloat(val('marginRight', 0)) || 0,
+                gx: parseFloat(val('gapX', 0)) || 0,
+                gy: parseFloat(val('gapY', 0)) || 0,
+                offX: parseFloat(val('offsetX', 0)) || 0,
+                offY: parseFloat(val('offsetY', 0)) || 0,
+                headerText: (val('headerText', '') || '').trim(),
+                enableCode: val('enableCode', true) === true || val('enableCode', true) === 'true',
+                showCodeText: val('showCodeText', true) === true || val('showCodeText', true) === 'true',
+                showPrice: val('showPrice', true) === true || val('showPrice', true) === 'true',
+                baseFont: parseFloat(val('fontSizeSelect', 8)) || 8,
+                codeFormat: val('codeType', 'CODE128')
+            };
+        }
+
+        // Susun tata letak SATU stiker: font nama + tinggi barcode yang pas
+        function planSticker(item, S) {
+            const codeStr = String(item.kode || '').trim();
+            const nama = String(item.nama || '').trim() || 'TANPA NAMA';
+            const variasi = String(item.variasi || '').trim();
+            const harga = (item.harga !== '' && item.harga != null) ? String(item.harga).trim() : '';
+
+            const hasHeader = !!S.headerText;
+            const hasVar = !!variasi;
+            const hasPrice = S.showPrice && !!harga;
+            const hasCode = S.enableCode && !!codeStr;
+            const hasCodeText = hasCode && S.showCodeText;
+
+            // Tinggi elemen tetap (px, sudah termasuk line-height & margin kecil)
+            const padV = STICKER_PAD_V_MM * 2 * PX_PER_MM;              // 3.78px
+            const headerH = hasHeader ? 9 : 0;                          // font 7px + leading
+            const varH = hasVar ? 9.5 : 0;                              // font 7px + leading
+            const codeTextH = hasCodeText ? 8 : 0;                      // font 7px leading-none + 1
+            const priceH = hasPrice ? 11.5 : 0;                         // 7px + pt-0.5 + border-top
+            const barcodeMargin = hasCode ? 4 : 0;                      // class my-0.5 (2px atas+bawah)
+
+            const shPx = S.sh * PX_PER_MM;
+            const avail = shPx - padV - 1;                              // 1px buffer anti-rounding
+            let free = avail - headerH - varH - codeTextH - priceH;
+
+            // Tinggi barcode ideal: ±26% tinggi stiker, dibatasi 9–24px
+            const idealBarcodeH = Math.round(Math.min(BARCODE_MAX_H, Math.max(BARCODE_MIN_H, shPx * 0.26)));
+            let barcodeH = idealBarcodeH;
+
+            // Lebar dalam stiker (px) untuk pengukuran teks
+            const innerW = Math.max(40, S.sw * PX_PER_MM - STICKER_PAD_H_MM * 2 * PX_PER_MM - 1);
+
+            // Maks baris nama mengikuti ruang yang tersedia
+            const maxLines = Math.max(1, Math.min(NAME_MAX_LINES, Math.floor(free / (NAME_MIN_FONT * 1.15))));
+
+            // Coba fit nama dengan barcode ideal
+            let budgetName = free - barcodeH - barcodeMargin;
+            let fit = fitNameText(nama, innerW, budgetName, S.baseFont, NAME_MIN_FONT, maxLines);
+
+            if (!fit.fits) {
+                // Mode darurat: kecilkan barcode ke minimum lalu coba lagi
+                barcodeH = BARCODE_MIN_H;
+                budgetName = free - barcodeH - barcodeMargin;
+                fit = fitNameText(nama, innerW, budgetName, S.baseFont, NAME_MIN_FONT, maxLines);
+            }
+
+            // Sisa ruang dikembalikan ke barcode (naikkan menuju ukuran ideal, jangan sia-siakan)
+            const usedName = Math.min(fit.height, budgetName);
+            barcodeH = Math.round(Math.max(BARCODE_MIN_H, Math.min(idealBarcodeH, free - barcodeMargin - usedName)));
+
+            return { nama, codeStr, variasi, harga, fit, barcodeH, headerH, varH, codeTextH, priceH, hasHeader, hasVar, hasPrice, hasCode, hasCodeText, innerW, headerText: S.headerText };
+        }
+
+        // Bangun HTML isi satu stiker dari hasil planSticker
+        function buildStickerHTML(plan, fontSize) {
+            let html = `<div style="font-size:${fontSize}px;" class="w-full text-center leading-tight min-w-0">`;
+            if (plan.hasHeader) html += `<div class="font-bold uppercase text-[7px] text-slate-500 truncate">${esc(plan.headerText)}</div>`;
+            html += `<div class="sticker-name" style="font-size:${plan.fit.fs}px; -webkit-line-clamp:${Math.min(plan.fit.lines, NAME_MAX_LINES)}; line-height:1.15;" title="${esc(plan.nama)}">${esc(plan.nama)}</div>`;
+            if (plan.hasVar) html += `<div class="text-[7px] text-slate-600 truncate">${esc(plan.variasi)}</div>`;
+            html += `</div>`;
+
+            if (plan.hasCode && plan.codeStr) {
+                html += `<div style="height:${plan.barcodeH}px;" class="my-0.5 w-full flex justify-center items-center overflow-hidden shrink-0">
+                             <svg id="__CODE_ID__" class="barcode-img"></svg>
+                         </div>`;
+                if (plan.hasCodeText) {
+                    html += `<div class="font-mono font-bold tracking-tight w-full text-center leading-none" style="font-size:7px;">${esc(plan.codeStr)}</div>`;
+                }
+            } else if (plan.codeStr) {
+                html += `<div class="font-mono text-[8px] font-bold tracking-tight my-0.5 truncate w-full text-center">${esc(plan.codeStr)}</div>`;
+            }
+
+            if (plan.hasPrice) {
+                html += `<div class="font-bold text-[7px] border-t w-full text-center pt-0.5 truncate">${formatHarga(plan.harga)}</div>`;
+            }
+            return html;
+        }
+
+        // Validasi apakah grid + margin muat di A4
+        function checkGridFitsA4(S) {
+            const totalW = S.cols * S.sw + (S.cols - 1) * S.gx;
+            const totalH = S.rows * S.sh + (S.rows - 1) * S.gy;
+            const usedW = S.ml + totalW + S.mr;
+            const usedH = S.mt + totalH + S.mb;
+            return {
+                totalW, totalH, usedW, usedH,
+                fitsW: usedW <= 210.5,
+                fitsH: usedH <= 297.5,
+                fits: usedW <= 210.5 && usedH <= 297.5
+            };
+        }
+
+        // ================= TOMBOL SMART FIT + LAPORAN =================
+        function smartFit() {
+            let S = readLayoutSettings();
+            let g = checkGridFitsA4(S);
+            let autoFixed = false;
+
+            // Jika grid tidak muat → coba perbaiki otomatis dengan auto-center
+            // (kecuali preset GL-A44 kalibrasi: margin hasil kalibrasi fisik, manual)
+            if (!g.fits) {
+                const preset = document.getElementById('presetSelect').value;
+                if (preset !== 'gla84_6x14') {
+                    autoFitMargins();
+                    S = readLayoutSettings();
+                    g = checkGridFitsA4(S);
+                    autoFixed = true;
+                }
+            }
+            let allOk = g.fits;
+
+            // ---- Validasi 1: grid vs kertas A4 ----
+            let rowsHTML = '';
+            rowsHTML += fitRow('Grid stiker', `${S.cols} kolom × ${S.rows} baris = ${S.cols * S.rows} stiker/halaman`, true);
+            rowsHTML += fitRow('Ukuran grid', `${g.totalW.toFixed(1)} × ${g.totalH.toFixed(1)} mm`, true);
+            rowsHTML += fitRow('Termasuk margin', `${g.usedW.toFixed(1)} × ${g.usedH.toFixed(1)} mm dari A4 (210 × 297 mm)`,
+                g.fits, g.fits ? `sisa ${(210 - g.usedW).toFixed(1)} × ${(297 - g.usedH).toFixed(1)} mm` : (autoFixed ? 'masih melebihi kertas meski margin sudah di-center' : 'MELEBIHI KERTAS!'));
+
+            // ---- Validasi 2: konten vs ukuran stiker ----
+            const stickers = getFilteredStickers();
+            const sample = stickers.length ? stickers : [{ nama: 'CONTOH NAMA BARANG PANJANG 350 ML', kode: '2000000000001', harga: 15000, variasi: '', qty: 1 }];
+            const longItem = sample.reduce((a, b) => (String(b.nama || '').length > String(a.nama || '').length ? b : a), sample[0]);
+            const plan = planSticker(longItem, S);
+
+            rowsHTML += fitRow('Nama terpanjang', `"${plan.nama.slice(0, 32)}${plan.nama.length > 32 ? '…' : ''}" (${plan.nama.length} karakter)`, true);
+            rowsHTML += fitRow('Font nama otomatis', `${plan.fit.fs}px • ${plan.fit.lines} baris`,
+                plan.fit.fits, plan.fit.fits ? 'tampil PENUH tanpa terpotong' : 'tetap terpotong — nama terlalu panjang utk stiker ini');
+            rowsHTML += fitRow('Tinggi barcode', `${plan.barcodeH}px ${plan.barcodeH <= BARCODE_MIN_H + 1 ? '(minimum — pertimbangkan matikan harga/header)' : ''}`, plan.barcodeH > BARCODE_MIN_H + 1);
+            rowsHTML += fitRow('Elemen aktif', [
+                plan.hasHeader ? 'Header' : null, 'Nama', plan.hasVar ? 'Variasi' : null,
+                plan.hasCode ? 'Barcode' : null, plan.hasCodeText ? 'Angka kode' : null, plan.hasPrice ? 'Harga' : null
+            ].filter(Boolean).join(' + '), true);
+
+            allOk = allOk && plan.fit.fits && plan.barcodeH > BARCODE_MIN_H + 1;
+
+            // ---- Saran perangkat ----
+            rowsHTML += fitRow('Setting Chrome', 'Margins None • Scale 100% • Background graphics ✓', true);
+            rowsHTML += fitRow('Driver Epson L120', 'Paper A4 • Actual Size (bukan Fit to Page) • Borderless OFF', true);
+            rowsHTML += fitRow('Verifikasi akhir', 'Klik "Uji Posisi" → cetak ke kertas polos → tempel di belakang lembar stiker → sorot lampu', true);
+
+            const box = document.getElementById('fitReport');
+            box.className = 'no-print fit-report' + (allOk ? '' : ' fail');
+            box.innerHTML = `
+                <div class="flex items-center justify-between mb-1.5">
+                    <b class="text-sm">${allOk ? '✅ SMART FIT — SEMUA AMAN, SIAP CETAK!' : '⚠️ SMART FIT — ADA YANG PERLU DIPERHATIKAN'}</b>
+                    <button onclick="document.getElementById('fitReport').classList.add('hidden')" class="text-xs opacity-60 hover:opacity-100 font-bold">✕ tutup</button>
+                </div>
+                ${rowsHTML}
+                <div class="mt-1.5 text-[10px] opacity-70">Setting kertas & desain otomatis tersimpan di browser ini — buka ulang tidak perlu set ulang.</div>
+            `;
+            box.classList.remove('hidden');
+
+            renderAllPages();
+            saveLabelSettings();
+            if (allOk) showToast('🪄 Smart FIT: grid muat A4 & konten muat stiker — siap cetak!');
+            else showToast('🪄 Smart FIT selesai — cek detail laporan di layar.', !plan.fit.fits);
+        }
+
+        function fitRow(label, value, ok, extra) {
+            const badge = ok ? '<b class="ok">✓</b>' : '<b class="bad">✗</b>';
+            return `<div class="fit-row"><span>${badge} ${esc(label)}</span><span class="text-right">${esc(value || '')}${extra ? ` — <b class="${ok ? 'ok' : 'bad'}">${esc(extra)}</b>` : ''}</span></div>`;
+        }
+
+        // ================= AUTO-SAVE SETTING (localStorage) =================
+        // V2: hasil kalibrasi printer user (atas 3 / bawah 2 / kiri-kanan 4 / 32×19 / gap 2)
+        // dibake ke preset. Geometry V1 lama TIDAK dimigrasi agar tidak menimpa kalibrasi.
+        const SETTINGS_KEY = 'LABEL_FIT_SETTINGS_V2';
+        const SETTINGS_KEY_OLD = 'LABEL_FIT_SETTINGS_V1';
+        const SETTING_IDS = ['presetSelect','gridCols','gridRows','stickerW','stickerH',
+            'marginTop','marginBottom','marginLeft','marginRight','gapX','gapY','offsetX','offsetY',
+            'showBorders','filterMode','prefixCode','headerText','codeType','fontSizeSelect',
+            'enableCode','showCodeText','showPrice','sheetsUrl','syncInterval'];
+
+        function saveLabelSettings() {
+            const s = {};
+            SETTING_IDS.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                s[id] = el.type === 'checkbox' ? el.checked : el.value;
+            });
+            safeSet(SETTINGS_KEY, JSON.stringify(s));
+        }
+
+        function loadLabelSettings() {
+            try {
+                let s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+                if (!s || typeof s !== 'object') {
+                    // Migrasi V1→V2: hanya data identitas (Sheets, kode, header, tampilan).
+                    // Geometry kertas & offset TIDAK dipindah — pakai preset kalibrasi baru.
+                    const old = JSON.parse(localStorage.getItem(SETTINGS_KEY_OLD) || 'null');
+                    if (old && typeof old === 'object') {
+                        const KEEP = ['sheetsUrl','syncInterval','prefixCode','headerText','filterMode',
+                            'codeType','enableCode','showCodeText','showPrice','showBorders','fontSizeSelect'];
+                        s = {};
+                        KEEP.forEach(k => { if (k in old) s[k] = old[k]; });
+                    }
+                }
+                if (!s || typeof s !== 'object') return false;
+                SETTING_IDS.forEach(id => {
+                    if (!(id in s)) return;
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    if (el.type === 'checkbox') el.checked = !!s[id]; else el.value = s[id];
+                });
+                // Jika ini hasil migrasi V1 → simpan langsung sebagai V2 agar terkunci
+                if (!localStorage.getItem(SETTINGS_KEY)) saveLabelSettings();
+                return true;
+            } catch (e) { return false; }
+        }
+
+        let saveTimer = null;
+        function bindAutoSaveSettings() {
+            const handler = () => { clearTimeout(saveTimer); saveTimer = setTimeout(saveLabelSettings, 400); };
+            SETTING_IDS.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('change', handler);
+                el.addEventListener('input', handler);
+            });
         }
 
         // ================= IMPORT TEMPLATE RESMI (.DOCX) =================
@@ -1041,16 +1410,12 @@
             const gx = document.getElementById('gapX').value + 'mm';
             const gy = document.getElementById('gapY').value + 'mm';
             const showBorders = document.getElementById('showBorders').checked;
-            const headerText = document.getElementById('headerText')?.value || '';
-            const enableCode = document.getElementById('enableCode')?.checked;
-            const showCodeText = document.getElementById('showCodeText')?.checked ?? true;
-            const showPrice = document.getElementById('showPrice')?.checked;
             const fontSize = document.getElementById('fontSizeSelect')?.value || '8px';
             const codeFormat = document.getElementById('codeType')?.value || 'CODE128';
 
-            // Tinggi barcode menyesuaikan tinggi stiker fisik
-            let barcodeHeight = rows > 12 ? 15 : 22;
-            if (sh > 0) barcodeHeight = Math.max(8, Math.min(barcodeHeight, Math.round(sh * 0.6)));
+            // SMART FIT: setting terkonsolidasi untuk perencanaan konten stiker
+            const S = readLayoutSettings();
+            const baseFontPx = parseFloat(fontSize) || 8;
 
             // ==== Render SEMUA halaman (yang non-aktif tersembunyi di layar, semua tercetak) ====
             for (let p = 0; p < totalPages; p++) {
@@ -1088,32 +1453,14 @@
                         // MODE UJI POSISI: tanda ✕ di tengah SETIAP sel (termasuk kosong)
                         cell.innerHTML = `<div style="font-size:10px;font-weight:800;color:#000;">✕</div>`;
                     } else if (item) {
-                        const codeStr = String(item.kode || '').trim();
-                        let html = `<div style="font-size:${fontSize};" class="w-full text-center leading-tight min-w-0">`;
-                        if (headerText) html += `<div class="font-bold uppercase text-[7px] text-slate-500 truncate">${esc(headerText)}</div>`;
-                        html += `<div class="font-bold truncate uppercase" title="${esc(item.nama)}">${esc(item.nama)}</div>`;
-                        if (item.variasi) html += `<div class="text-[7px] text-slate-600 truncate">${esc(item.variasi)}</div>`;
-                        html += `</div>`;
-
-                        if (enableCode && codeStr) {
-                            const codeId = `code-${p}-${i}`;
-                            // Container barcode: tinggi dikunci, batang SVG fit di dalamnya
-                            html += `<div style="height:${barcodeHeight}px;" class="my-0.5 w-full flex justify-center items-center overflow-hidden shrink-0">
-                                         <svg id="${codeId}" class="barcode-img"></svg>
-                                     </div>`;
-                            // Angka barcode: teks HTML TERPISAH (selalu tajam & tidak terpotong)
-                            if (showCodeText) {
-                                html += `<div class="font-mono font-bold tracking-tight w-full text-center leading-none" style="font-size:7px;">${esc(codeStr)}</div>`;
-                            }
-                            barcodeTasks.push({ id: codeId, code: codeStr });
-                        } else if (codeStr) {
-                            html += `<div class="font-mono text-[8px] font-bold tracking-tight my-0.5 truncate w-full text-center">${esc(codeStr)}</div>`;
-                        }
-
-                        if (showPrice && item.harga !== '' && item.harga != null) {
-                            html += `<div class="font-bold text-[7px] border-t w-full text-center pt-0.5 truncate">${formatHarga(item.harga)}</div>`;
-                        }
+                        // ===== SMART FIT: layout per-stiker, nama dijamin tampil penuh =====
+                        const plan = planSticker(item, S);
+                        const codeId = `code-${p}-${i}`;
+                        let html = buildStickerHTML(plan, baseFontPx).replace('__CODE_ID__', codeId);
                         cell.innerHTML = html;
+                        if (plan.hasCode && plan.codeStr) {
+                            barcodeTasks.push({ id: codeId, code: plan.codeStr, h: plan.barcodeH });
+                        }
                     } else {
                         cell.innerHTML = `<span class="text-[8px] text-slate-200 no-print select-none">KOSONG</span>`;
                     }
@@ -1125,8 +1472,9 @@
                 pageElements.push(pageEl);
 
                 // Generate barcode SETELAH halaman masuk DOM (sinkron, tanpa setTimeout)
+                // Tinggi barcode per-stiker hasil perhitungan Smart FIT
                 barcodeTasks.forEach(t => {
-                    drawBarcode(document.getElementById(t.id), t.code, codeFormat, barcodeHeight);
+                    drawBarcode(document.getElementById(t.id), t.code, codeFormat, t.h);
                 });
             }
         }
